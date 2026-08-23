@@ -1,0 +1,1941 @@
+<title>Great Work! Solution Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+  :root {
+    --parch: #F1E9D6; --parch-2: #EAE0C9; --parch-3: #E2D6B8;
+    --ink: #2A2318; --ink-dim: #6B5F49; --ink-faint: #9C8F74;
+    --line: #CFC2A4; --line-soft: #DDD2B6;
+    --brass: #A0762B; --gold: #8A6A1E; --oxblood: #8C3B2E; --verdigris: #33705E;
+    --display: 'Cinzel', 'Times New Roman', serif;
+    --body: 'EB Garamond', Georgia, serif;
+    --mono: 'Courier Prime', 'Courier New', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: #F1E9D6; }
+  body { background: var(--parch); color: var(--ink); font-family: var(--body); font-size: 16px; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 26px 20px 60px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: .06em; }
+  h1 small { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .22em; text-transform: uppercase; margin-left: 12px; }
+  .backlink { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; color: var(--ink-dim); text-decoration: none; border-bottom: 1px solid var(--line); }
+  .backlink:hover { color: var(--ink); }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-dim); background: var(--parch); border: 1px solid var(--ink-dim);
+    padding: 7px 12px; cursor: pointer;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.on { background: var(--ink); color: var(--parch); border-color: var(--ink); }
+
+  .toolrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 14px; border: 1px solid var(--line); border-bottom: 0; background: var(--parch-3); margin-top: 8px; }
+  .toolrow .sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 3px; }
+  .toolrow .hint { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); letter-spacing: .05em; margin-left: auto; }
+  button.ctl, .seg button {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink); background: var(--parch); border: 1px solid var(--ink-dim);
+    padding: 6px 11px; cursor: pointer;
+  }
+  button.ctl:hover, .seg button:hover { background: var(--ink); color: var(--parch); }
+  button.ctl.on { background: var(--ink); color: var(--parch); }
+  button.ctl.warn { border-color: var(--oxblood); color: var(--oxblood); }
+  button.ctl.warn:hover { background: var(--oxblood); color: var(--parch); }
+  .seg { display: flex; border: 1px solid var(--ink-dim); }
+  .seg button { border: 0; padding: 6px 10px; }
+  .seg button + button { border-left: 1px solid var(--ink-dim); }
+  .seg button.on { background: var(--ink); color: var(--parch); }
+  .seg-label { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); letter-spacing: .1em; }
+
+  .stagebox { border: 1px solid var(--line); background: var(--parch-2); position: relative; }
+  canvas#field { display: block; width: 100%; height: auto; cursor: crosshair; }
+  canvas#field.tool-select { cursor: default; }
+  .stamp { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .4s; }
+  .stamp.show { opacity: 1; }
+  .stamp-inner {
+    border: 2.5px solid var(--gold); color: var(--gold); background: rgba(241,233,214,.85);
+    font-family: var(--display); font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    font-size: 18px; padding: 10px 22px; transform: rotate(-7deg); text-align: center;
+  }
+  .stamp-inner.bad { border-color: var(--oxblood); color: var(--oxblood); }
+  .stamp-inner small { display: block; font-family: var(--mono); font-weight: 400; font-size: 10.5px; letter-spacing: .08em; margin-top: 4px; color: var(--ink-dim); text-transform: none; }
+
+  .bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border: 1px solid var(--line); border-top: 0; background: var(--parch-2); }
+  .speed { display: flex; border: 1px solid var(--ink-dim); }
+  .speed .ctl { border: 0; padding: 7px 11px; }
+  .speed .ctl + .ctl { border-left: 1px solid var(--ink-dim); }
+  .hud { margin-left: auto; display: flex; gap: 14px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim); letter-spacing: .06em; }
+  .hud b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .hud .sum b { color: var(--gold); }
+
+  .status { border: 1px solid var(--line); border-top: 0; background: var(--parch-2); padding: 7px 16px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim); }
+  .status .bad { color: var(--oxblood); font-weight: 700; }
+  .status .good { color: var(--verdigris); font-weight: 700; }
+
+  .tapes { border: 1px solid var(--line); border-top: 0; background: var(--parch-3); padding: 8px 14px 10px; }
+  .oppal { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; padding-bottom: 7px; margin-bottom: 6px; border-bottom: 1px solid var(--line-soft); }
+  .oppal .seg-label { margin-right: 3px; }
+  .oppal button { font-family: var(--mono); font-size: 13px; font-weight: 700; padding: 3px 9px; border: 1px solid var(--ink-dim); background: var(--parch); cursor: pointer; color: var(--ink); }
+  .oppal button:hover { background: var(--ink); color: var(--parch); }
+  .tape-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+  .tape-label { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: var(--ink-dim); width: 58px; flex: none; cursor: pointer; }
+  .tape-row.sel .tape-label { color: var(--gold); }
+  .tape-cells { display: flex; gap: 3px; overflow-x: auto; scrollbar-width: none; }
+  .tape-cells::-webkit-scrollbar { display: none; }
+  .tape-cells span {
+    font-family: var(--mono); font-size: 12px; line-height: 1; padding: 3px 5px;
+    border: 1px solid var(--line); color: var(--ink-dim); background: var(--parch-2); flex: none; cursor: pointer;
+  }
+  .tape-cells span.delay { opacity: .45; border-style: dashed; }
+  .tape-cells span.spent { opacity: .25; }
+  .tape-cells span.on { background: var(--ink); color: var(--parch); border-color: var(--ink); opacity: 1; }
+  .tape-cells span.cursor { border-color: var(--gold); box-shadow: 0 0 0 1.5px var(--gold); }
+
+  .sharebox { border: 1px solid var(--line); border-top: 0; background: var(--parch-2); padding: 9px 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .sharebox input { flex: 1; min-width: 220px; font-family: var(--mono); font-size: 11px; padding: 6px 8px; border: 1px solid var(--line); background: var(--parch); color: var(--ink); }
+
+  footer { margin-top: 22px; font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); letter-spacing: .08em; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Great Work!<small>Solution Editor</small></h1>
+    <a class="backlink" href="lab.html">← the machine lab</a>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="toolrow" id="editTools">
+    <span class="seg-label">TOOL</span>
+    <div class="seg" id="toolSeg">
+      <button data-tool="select" class="on">Select</button>
+      <button data-tool="arm">Arm</button>
+      <button data-tool="elbow">Elbow</button>
+    </div>
+    <span class="seg-label">GRIP</span>
+    <div class="seg" id="gripSeg">
+      <button data-g="1" class="on">1</button><button data-g="2">2</button><button data-g="3">3</button><button data-g="6">6</button>
+    </div>
+    <span class="seg-label">LEN</span>
+    <div class="seg" id="lenSeg">
+      <button data-l="1" class="on">1</button><button data-l="2">2</button><button data-l="3">3</button>
+    </div>
+    <div class="sep"></div>
+    <button class="ctl" id="btnRotL" title="rotate selected ( [ )">↺</button>
+    <button class="ctl" id="btnRotR" title="rotate selected ( ] )">↻</button>
+    <button class="ctl warn" id="btnDelete">Delete</button>
+    <div class="sep"></div>
+    <button class="ctl" id="btnRef">Reference</button>
+    <button class="ctl warn" id="btnClear">Clear</button>
+    <span class="hint" id="toolHint">click the board to place · drag a base to move</span>
+  </div>
+
+  <div class="stagebox">
+    <canvas id="field" width="980" height="560"></canvas>
+    <div class="stamp" id="stamp"><div class="stamp-inner" id="stampInner"></div></div>
+  </div>
+
+  <div class="bar">
+    <button class="ctl" id="btnMode">▶ Test</button>
+    <button class="ctl" id="btnPlay" disabled>Pause</button>
+    <button class="ctl" id="btnStep" disabled>Step</button>
+    <div class="speed" role="group" aria-label="speed">
+      <button class="ctl" data-ms="700">1×</button>
+      <button class="ctl on" data-ms="350">2×</button>
+      <button class="ctl" data-ms="140">4×</button>
+      <button class="ctl" data-ms="0">MAX</button>
+    </div>
+    <div class="hud">
+      <span>CYCLE <b id="hTick">0</b></span>
+      <span>COST <b id="hCost">—</b></span>
+      <span>AREA <b id="hArea">—</b></span>
+      <span class="sum">SUM <b id="hSum">—</b></span>
+      <span>PRODUCT <b id="hProd">0/9</b></span>
+    </div>
+  </div>
+
+  <div class="status" id="status">ready</div>
+  <div class="tapes" id="tapes"></div>
+
+  <div class="sharebox">
+    <button class="ctl" id="btnCopy">Copy code</button>
+    <input id="shareIn" placeholder="paste a solution code — e.g. leachworks.AQZK…" spellcheck="false">
+    <button class="ctl" id="btnImport">Import</button>
+  </div>
+
+  <footer>
+    <span>GREAT WORK! · solution editor · the code you copy is the calldata you would submit</span>
+    <span>Great Work!</span>
+  </footer>
+</div>
+
+<script>
+/*
+ * GREAT WORK! — reference engine (v0.2 spec)
+ *
+ * Pure simulation, no DOM. Runs in Node (module.exports) and the browser
+ * (window.GW). Commit-state arithmetic is exact integer hex math; the sweep
+ * rule (§9) samples fractional kinematics in pixel space.
+ */
+(function (root) {
+  'use strict';
+
+  // ---------- hex math ----------
+  const DIRS = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]]; // E SE SW W NW NE
+  const SQ3 = Math.sqrt(3);
+  const mod6 = (n) => ((n % 6) + 6) % 6;
+  const cellKey = (c) => c[0] + ',' + c[1];
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
+  const scale = (v, k) => [v[0] * k, v[1] * k];
+  const eq = (a, b) => a[0] === b[0] && a[1] === b[1];
+  // rotate an axial vector k steps clockwise (exact)
+  function rotK(v, k) {
+    let [q, r] = v;
+    k = mod6(k);
+    for (let i = 0; i < k; i++) { const t = q; q = -r; r = t + r; }
+    return [q, r];
+  }
+  const toPx = (c) => [SQ3 * (c[0] + c[1] / 2), 1.5 * c[1]];
+  const dirRad = (d) => Math.atan2(1.5 * DIRS[mod6(d)][1], SQ3 * (DIRS[mod6(d)][0] + DIRS[mod6(d)][1] / 2));
+  // continuous unit step in pixel space for a fractional direction (radians)
+  const radVec = (a) => [Math.cos(a), Math.sin(a)];
+  // NOTE: dir 0 (E) has pixel angle 0; each +1 dir step = +60° in screen space.
+  const DIR0 = dirRad(0);
+  const dirRadF = (dF) => DIR0 + dF * Math.PI / 3;
+  function axialRound(x, y) {
+    // invert toPx then cube-round
+    const r = y / 1.5, q = x / SQ3 - r / 2;
+    let rq = Math.round(q), rr = Math.round(r), rs = Math.round(-q - r);
+    const dq = Math.abs(rq - q), dr = Math.abs(rr - r), ds = Math.abs(rs - (-q - r));
+    if (dq > dr && dq > ds) rq = -rr - rs; else if (dr > ds) rr = -rq - rs;
+    return [rq, rr];
+  }
+
+  // ---------- constants ----------
+  const OFFSETS = { 1: [0], 2: [0, 3], 3: [0, 2, 4], 6: [0, 1, 2, 3, 4, 5] };
+  const PRICE = { 1: 20, 2: 24, 3: 26, 6: 30 };
+  const ELBOW_STEP = 5; // elbow surcharge compounds: 5g per order of attachment
+  // transmutation roster adopted from Opus Magnum's campaign
+  const METALS = ['Pb', 'Sn', 'Fe', 'Cu', 'Ag', 'Au'];
+  const CARDINALS = ['Ai', 'Ea', 'Fi', 'Wa'];
+  const GLYPH_PRICE = { bonders: 10, debonders: 15, calcifiers: 10, duplicators: 20,
+    projectors: 20, purifiers: 20, animismus: 20, disposals: 0 };
+  const RADIUS = 0.35, K_SAMPLES = 12;
+  const OPS = 'GD+-PQW';
+  const DEFAULT_CAPS = { parts: 24, elbowDepth: 4, tapeLen: 64, atoms: 64, cycles: 4000, goal: 9 };
+
+  // ---------- simulation ----------
+  function createSim(puzzle, machine) {
+    const caps = Object.assign({}, DEFAULT_CAPS, puzzle.caps || {});
+    // reagents may be single atoms ({cell, elem}) or whole molecules ({cells, elems, bonds});
+    // a molecule reagent respawns whenever every one of its cells is empty
+    const INPUTS = (puzzle.inputs || []).map(g => g.cell
+      ? { cells: [g.cell], elems: [g.elem], bonds: [] }
+      : { cells: g.cells, elems: g.elems, bonds: g.bonds || [] });
+    const S = {
+      puzzle, caps,
+      tick: 0,
+      atoms: [],            // {id, cell, elem, bonds:Set<id>}
+      nextAtom: 1,
+      arms: [],             // runtime arm records
+      products: 0,
+      fault: null,          // {kind, tick, detail}
+      area: new Set(),
+      cost: 0,
+      cycles: null,
+      events: [],
+      motion: null,         // cached last-tick motion for rendering
+    };
+
+    // -- build arms --
+    const byId = {};
+    for (const a of machine.arms) {
+      const arm = {
+        id: a.id, grippers: a.grippers || 1, len: a.len || 1,
+        mount: a.mount,                       // {ground:[q,r]} | {elbow:{parent,at}}
+        angle: a.angle || 0,                  // relative angle, 0..5
+        tape: { delay: (a.tape && a.tape.delay) || 0, ops: (a.tape && a.tape.ops) || ['W'] },
+        baseRot: 0,                           // frame rotation for ground arms
+        carriers: [],                         // [{arm, grip}] while carried (ground arms only)
+        carryRel: 0,
+        holds: [],                            // per gripper: null | {kind:'atom',id} | {kind:'tower',id}
+      };
+      arm.holds = OFFSETS[arm.grippers].map(() => null);
+      byId[arm.id] = arm;
+      S.arms.push(arm);
+    }
+    // pricing: elbow surcharge scales with attachment order (2nd order +5, 3rd +10, ...)
+    for (const arm of S.arms) {
+      let depth = 0, cur = arm;
+      while (cur.mount.elbow) { cur = byId[cur.mount.elbow.parent]; depth++; }
+      S.cost += PRICE[arm.grippers] + ELBOW_STEP * depth;
+    }
+    for (const fam in GLYPH_PRICE) S.cost += (puzzle[fam] || []).length * GLYPH_PRICE[fam];
+
+    // -- validation --
+    function reject(msg) { throw new Error('invalid machine: ' + msg); }
+    if (S.arms.length > caps.parts) reject('too many parts');
+    const baseCells = new Set();
+    for (const arm of S.arms) {
+      if (!OFFSETS[arm.grippers]) reject('bad gripper count ' + arm.grippers);
+      if (arm.len < 1 || arm.len > 3) reject('bad arm length');
+      if (arm.tape.ops.length + arm.tape.delay > caps.tapeLen) reject('tape too long');
+      for (const op of arm.tape.ops) if (!OPS.includes(op)) reject('bad op ' + op);
+      if (arm.mount.elbow) {
+        const p = byId[arm.mount.elbow.parent];
+        if (!p) reject('elbow parent missing');
+        if (arm.mount.elbow.at < 1 || arm.mount.elbow.at > p.len) reject('elbow position off shaft');
+        let d = 0, cur = arm;
+        while (cur.mount.elbow) { cur = byId[cur.mount.elbow.parent]; if (++d > caps.elbowDepth) reject('elbow too deep'); }
+      } else {
+        const k = cellKey(arm.mount.ground);
+        if (baseCells.has(k)) reject('two bases on one cell');
+        baseCells.add(k);
+        arm.basePos = arm.mount.ground.slice();
+      }
+    }
+
+    // -- glyph shapes are fixed: placement is translation + rotation only (no mirroring) --
+    // canonical footprints mirror Opus Magnum's: every two-cell glyph is an adjacent pair;
+    // purification is inputs a, a+d with output a+rot(d); animismus is salts a, a+d with
+    // vitae out a+rot(d) and mors out a+rot⁻¹(d); disposal is a cell plus its whole ring.
+    const dirIndex = (v) => DIRS.findIndex(d => d[0] === v[0] && d[1] === v[1]);
+    const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+    {
+      const pair = (fam, g) => {
+        if (g.length !== 2 || dirIndex(sub(g[1], g[0])) < 0) reject(fam + ' glyph must be two adjacent cells');
+      };
+      for (const fam of ['bonders', 'debonders', 'duplicators', 'projectors']) {
+        for (const g of (puzzle[fam] || [])) pair(fam, g);
+      }
+      for (const g of (puzzle.purifiers || [])) {
+        const k = g.length === 3 ? dirIndex(sub(g[1], g[0])) : -1;
+        if (k < 0 || dirIndex(sub(g[2], g[0])) !== mod6(k + 1)) reject('purifier glyph shape is fixed');
+      }
+      for (const g of (puzzle.animismus || [])) {
+        const k = g.length === 4 ? dirIndex(sub(g[1], g[0])) : -1;
+        if (k < 0 || dirIndex(sub(g[2], g[0])) !== mod6(k + 1) || dirIndex(sub(g[3], g[0])) !== mod6(k + 5)) {
+          reject('animismus glyph shape is fixed');
+        }
+      }
+    }
+    const disposalFootprint = (c) => [c, ...DIRS.map(d => add(c, d))];
+
+    // -- layout validation: glyphs may not overlap each other; bases may not sit on glyphs --
+    {
+      const glyphCells = new Set();
+      const claim = (c) => {
+        const k = cellKey(c);
+        if (glyphCells.has(k)) reject('glyph overlap at ' + k);
+        glyphCells.add(k);
+      };
+      for (const fam in GLYPH_PRICE) for (const g of (puzzle[fam] || [])) {
+        if (fam === 'disposals') { disposalFootprint(g).forEach(claim); continue; }
+        for (const c of (Array.isArray(g[0]) ? g : [g])) claim(c);
+      }
+      for (const g of INPUTS) g.cells.forEach(claim);
+      for (const c of ((puzzle.output && puzzle.output.cells) || [])) claim(c);
+      for (const arm of S.arms) {
+        if (!arm.mount.elbow && glyphCells.has(cellKey(arm.mount.ground))) {
+          reject('base on glyph cell ' + cellKey(arm.mount.ground));
+        }
+      }
+    }
+
+    // initial atoms (tests/puzzles may pre-place)
+    for (const a of (puzzle.atoms || [])) {
+      S.atoms.push({ id: S.nextAtom++, cell: a.cell.slice(), elem: a.elem, bonds: new Set() });
+    }
+
+    for (const g of INPUTS) for (const c of g.cells) S.area.add(cellKey(c));
+    for (const fam in GLYPH_PRICE) for (const g of (puzzle[fam] || [])) {
+      if (fam === 'disposals') { disposalFootprint(g).forEach(c => S.area.add(cellKey(c))); continue; }
+      for (const c of (Array.isArray(g[0]) ? g : [g])) S.area.add(cellKey(c));
+    }
+    for (const c of ((puzzle.output && puzzle.output.cells) || [])) S.area.add(cellKey(c));
+
+    const atomAt = (cell) => S.atoms.find(a => eq(a.cell, cell));
+    const groundArmAt = (cell) => S.arms.find(a => !a.mount.elbow && eq(pose(a).pos, cell));
+
+    function molecule(anchor) {
+      const seen = new Set([anchor.id]), out = [anchor], stack = [anchor];
+      while (stack.length) {
+        const a = stack.pop();
+        for (const id of a.bonds) {
+          if (seen.has(id)) continue;
+          const b = S.atoms.find(x => x.id === id);
+          if (b) { seen.add(id); out.push(b); stack.push(b); }
+        }
+      }
+      return out;
+    }
+
+    // -- exact kinematics (integers) --
+    // pose: {pos:[q,r], rot} — rot is the arm's frame rotation; global dir = rot+angle
+    function pose(arm, guard) {
+      guard = guard || new Set();
+      if (guard.has(arm.id)) { S.fault = S.fault || { kind: 'grab-cycle', tick: S.tick }; return { pos: [0, 0], rot: 0 }; }
+      guard.add(arm.id);
+      if (arm.mount.elbow) {
+        const p = byId[arm.mount.elbow.parent];
+        const pp = pose(p, guard);
+        const pd = mod6(pp.rot + p.angle);
+        return { pos: add(pp.pos, scale(DIRS[pd], arm.mount.elbow.at)), rot: pd };
+      }
+      if (arm.carriers.length) {
+        const { arm: h, grip } = arm.carriers[0];
+        const hp = pose(h, guard);
+        const hd = mod6(hp.rot + h.angle + OFFSETS[h.grippers][grip]);
+        const hand = add(hp.pos, scale(DIRS[hd], h.len));
+        return { pos: hand, rot: mod6(hd + arm.carryRel) };
+      }
+      return { pos: arm.basePos, rot: arm.baseRot };
+    }
+    const handCell = (arm, grip) => {
+      const p = pose(arm);
+      const hd = mod6(p.rot + arm.angle + OFFSETS[arm.grippers][grip]);
+      return add(p.pos, scale(DIRS[hd], arm.len));
+    };
+    const handDir = (arm, grip) => mod6(pose(arm).rot + arm.angle + OFFSETS[arm.grippers][grip]);
+
+    // supports(a): every arm whose motion carries a (elbow parents + carriers)
+    function supportChain(arm) {
+      const out = new Set(); const stack = [arm];
+      while (stack.length) {
+        const x = stack.pop();
+        if (out.has(x.id)) continue;
+        out.add(x.id);
+        if (x.mount.elbow) stack.push(byId[x.mount.elbow.parent]);
+        for (const c of x.carriers) stack.push(c.arm);
+      }
+      return out;
+    }
+
+    // -- fractional kinematics (pixels), valid during a cached motion --
+    // M = S.motion: {angle0:{id:θ}, delta:{id:±1|0}, pivot:{id:±1|0}, carryRel0:{id}, snapshot atoms}
+    function poseF(arm, f, M) {
+      if (arm.mount.elbow) {
+        const p = byId[arm.mount.elbow.parent];
+        const pp = poseF(p, f, M);
+        const pdF = pp.rotF + (M.angle0[p.id] + M.delta[p.id] * f);
+        const dir = dirRadF(pdF);
+        return { x: pp.x + arm.mount.elbow.at * SQ3 * Math.cos(dir), y: pp.y + arm.mount.elbow.at * SQ3 * Math.sin(dir), rotF: pdF };
+      }
+      if (M.carriers0[arm.id] && M.carriers0[arm.id].length) {
+        const { arm: hid, grip } = M.carriers0[arm.id][0];
+        const h = byId[hid];
+        const hp = poseF(h, f, M);
+        const hdF = hp.rotF + (M.angle0[h.id] + M.delta[h.id] * f) + OFFSETS[h.grippers][grip];
+        const dir = dirRadF(hdF);
+        return {
+          x: hp.x + h.len * SQ3 * Math.cos(dir), y: hp.y + h.len * SQ3 * Math.sin(dir),
+          rotF: hdF + (M.carryRel0[arm.id] + (M.pivot[hid] || 0) * f),
+        };
+      }
+      const px = toPx(M.basePos0[arm.id]);
+      return { x: px[0], y: px[1], rotF: M.baseRot0[arm.id] };
+    }
+    function handF(arm, grip, f, M) {
+      const p = poseF(arm, f, M);
+      const hdF = p.rotF + (M.angle0[arm.id] + M.delta[arm.id] * f) + OFFSETS[arm.grippers][grip];
+      const dir = dirRadF(hdF);
+      return { x: p.x + arm.len * SQ3 * Math.cos(dir), y: p.y + arm.len * SQ3 * Math.sin(dir), dF: hdF };
+    }
+
+    // -- tape --
+    function opAt(arm, tick) { // tick is 1-based
+      if (tick <= arm.tape.delay) return 'W';
+      return arm.tape.ops[(tick - arm.tape.delay - 1) % arm.tape.ops.length];
+    }
+
+    // ---------- step ----------
+    function step() {
+      if (S.fault || S.cycles !== null) return S;
+      S.tick++;
+      const ev = (e) => S.events.push(Object.assign({ tick: S.tick }, e));
+
+      // 1. spawn — a reagent refills only when its whole footprint is empty
+      for (const g of INPUTS) {
+        if (g.cells.every(c => !atomAt(c))) {
+          const born = g.cells.map((c, i) => {
+            const a = { id: S.nextAtom++, cell: c.slice(), elem: g.elems[i], bonds: new Set() };
+            S.atoms.push(a); return a;
+          });
+          for (const [i, j] of g.bonds) { born[i].bonds.add(born[j].id); born[j].bonds.add(born[i].id); }
+        }
+      }
+      if (S.atoms.length > caps.atoms) { S.fault = { kind: 'exhaustion', tick: S.tick, detail: 'atom cap' }; return S; }
+
+      const ops = {}; for (const arm of S.arms) ops[arm.id] = opAt(arm, S.tick);
+
+      // 2a. releases
+      for (const arm of S.arms) {
+        if (ops[arm.id] !== 'D') continue;
+        arm.holds.forEach((h, gi) => {
+          if (h && h.kind === 'tower') {
+            const t = byId[h.id];
+            const p = pose(t); // pose BEFORE detaching, while still carried
+            t.carriers = t.carriers.filter(c => !(c.arm === arm && c.grip === gi));
+            if (t.carriers.length === 0) { // re-anchor exactly where it stands
+              t.basePos = p.pos.slice(); t.baseRot = p.rot; t.mount = { ground: t.basePos.slice() };
+            }
+          }
+          arm.holds[gi] = null;
+        });
+      }
+      // 2b. grabs (simultaneous, evaluated against post-release state)
+      for (const arm of S.arms) {
+        if (ops[arm.id] !== 'G') continue;
+        OFFSETS[arm.grippers].forEach((_, gi) => {
+          if (arm.holds[gi]) return;
+          const cell = handCell(arm, gi);
+          const atom = atomAt(cell);
+          if (atom) { arm.holds[gi] = { kind: 'atom', id: atom.id }; return; }
+          const tower = groundArmAt(cell);
+          if (tower && tower !== arm) {
+            if (supportChain(arm).has(tower.id)) { S.fault = { kind: 'grab-cycle', tick: S.tick }; return; }
+            const preRot = pose(tower).rot; // pose before this carrier attaches
+            arm.holds[gi] = { kind: 'tower', id: tower.id };
+            tower.carriers.push({ arm, grip: gi });
+            if (tower.carriers.length === 1) tower.carryRel = mod6(preRot - handDir(arm, gi));
+          }
+        });
+      }
+      if (S.fault) return S;
+
+      // 3. motion — capture start, apply deltas, verify constraints, commit
+      const M = {
+        angle0: {}, delta: {}, pivot: {}, carryRel0: {}, basePos0: {}, baseRot0: {}, carriers0: {},
+        atoms: [], // snapshot for rendering/sweep: {id, elem, px0, holder:{armId,grip,s}|null, cell0}
+      };
+      for (const arm of S.arms) {
+        M.angle0[arm.id] = arm.angle;
+        const op = ops[arm.id];
+        M.delta[arm.id] = op === '+' ? 1 : op === '-' ? -1 : 0;
+        M.pivot[arm.id] = op === 'P' ? 1 : op === 'Q' ? -1 : 0;
+        M.carryRel0[arm.id] = arm.carryRel;
+        M.carriers0[arm.id] = arm.carriers.map(c => ({ arm: c.arm.id, grip: c.grip }));
+        if (!arm.mount.elbow && arm.carriers.length === 0) { M.basePos0[arm.id] = arm.basePos.slice(); M.baseRot0[arm.id] = arm.baseRot; }
+      }
+      // hand states before...
+      const handBefore = {};
+      for (const arm of S.arms) OFFSETS[arm.grippers].forEach((_, gi) => {
+        handBefore[arm.id + ':' + gi] = { cell: handCell(arm, gi), dir: handDir(arm, gi) };
+      });
+      // ...apply joint deltas + pivots-on-towers...
+      for (const arm of S.arms) {
+        arm.angle = mod6(arm.angle + M.delta[arm.id]);
+        if (M.pivot[arm.id]) arm.holds.forEach(h => {
+          if (h && h.kind === 'tower') byId[h.id].carryRel = mod6(byId[h.id].carryRel + M.pivot[arm.id]);
+        });
+      }
+      // ...hand states after
+      const handAfter = {};
+      for (const arm of S.arms) OFFSETS[arm.grippers].forEach((_, gi) => {
+        handAfter[arm.id + ':' + gi] = { cell: handCell(arm, gi), dir: handDir(arm, gi) };
+      });
+
+      // molecule transforms with agreement checking
+      const molXf = new Map(); // rootAtomId -> {k, b:[q,r], holder:{armId,grip,s}, atoms:[]}
+      const molOf = new Map(); // atomId -> rootAtomId
+      for (const arm of S.arms) arm.holds.forEach((h, gi) => {
+        if (!h || h.kind !== 'atom') return;
+        const anchor = S.atoms.find(a => a.id === h.id);
+        if (!anchor) { arm.holds[gi] = null; return; }
+        const mol = molecule(anchor);
+        const rootId = Math.min(...mol.map(a => a.id));
+        const b0 = handBefore[arm.id + ':' + gi], b1 = handAfter[arm.id + ':' + gi];
+        const s = M.pivot[arm.id] || 0;
+        const k = mod6(b1.dir - b0.dir + s);
+        // M(p) = R^k (p - h0) + h1  →  affine b = h1 - R^k h0
+        const b = [b1.cell[0] - rotK(b0.cell, k)[0], b1.cell[1] - rotK(b0.cell, k)[1]];
+        const prev = molXf.get(rootId);
+        if (prev && (prev.k !== k || !eq(prev.b, b))) {
+          S.fault = { kind: 'overconstraint', tick: S.tick, detail: 'molecule ' + rootId };
+        } else if (!prev) {
+          molXf.set(rootId, { k, b, holder: { armId: arm.id, grip: gi, s }, atoms: mol });
+          for (const a of mol) molOf.set(a.id, rootId);
+        }
+      });
+      if (S.fault) return S;
+      // held-by-static + moved-by-other is covered: static holder contributes k=0,b=0
+      // multi-carrier tower agreement: poses from each carrier must match
+      for (const arm of S.arms) {
+        if (arm.carriers.length < 2) continue;
+        const p0 = pose(arm);
+        for (let i = 1; i < arm.carriers.length; i++) {
+          const alt = { pos: null, rot: null };
+          const { arm: h, grip } = arm.carriers[i];
+          const hp = pose(h);
+          const hd = mod6(hp.rot + h.angle + OFFSETS[h.grippers][grip]);
+          alt.pos = add(hp.pos, scale(DIRS[hd], h.len)); alt.rot = mod6(hd + arm.carryRel);
+          if (!eq(alt.pos, p0.pos) || alt.rot !== p0.rot) {
+            S.fault = { kind: 'overconstraint', tick: S.tick, detail: 'tower ' + arm.id };
+          }
+        }
+      }
+      if (S.fault) return S;
+
+      // snapshot atoms + commit molecule motion (exact)
+      M.bonds0 = [];
+      {
+        const seen = new Set();
+        for (const a of S.atoms) for (const id of a.bonds) {
+          const kk = Math.min(a.id, id) + '-' + Math.max(a.id, id);
+          if (!seen.has(kk)) { seen.add(kk); M.bonds0.push([a.id, id]); }
+        }
+      }
+      for (const a of S.atoms) {
+        const rootId = molOf.get(a.id);
+        const xf = rootId !== undefined ? molXf.get(rootId) : null;
+        M.atoms.push({ id: a.id, elem: a.elem, cell0: a.cell.slice(), holder: xf ? xf.holder : null });
+      }
+      for (const [, xf] of molXf) for (const a of xf.atoms) {
+        a.cell = add(rotK(a.cell, xf.k), xf.b);
+      }
+
+      // 3b. sweep — K sample instants, full pair check + area accumulation
+      S.motion = M;
+      const collidables = (f) => {
+        const out = [];
+        for (const m of M.atoms) {
+          if (m.holder) {
+            const arm = byId[m.holder.armId];
+            const hF = handF(arm, m.holder.grip, f, M);
+            const h0F = handF(arm, m.holder.grip, 0, M);
+            const p0 = toPx(m.cell0), h0 = [h0F.x, h0F.y];
+            const dA = (hF.dF - h0F.dF + m.holder.s * f) * Math.PI / 3;
+            const rx = p0[0] - h0[0], ry = p0[1] - h0[1];
+            out.push({ kind: 'atom', id: m.id, elem: m.elem,
+              x: hF.x + rx * Math.cos(dA) - ry * Math.sin(dA),
+              y: hF.y + rx * Math.sin(dA) + ry * Math.cos(dA) });
+          } else {
+            const p = toPx(m.cell0);
+            out.push({ kind: 'atom', id: m.id, elem: m.elem, x: p[0], y: p[1] });
+          }
+        }
+        for (const arm of S.arms) {
+          if (arm.mount.elbow) continue; // elbows don't collide
+          const p = poseF(arm, f, M);
+          out.push({ kind: 'base', id: arm.id, x: p.x, y: p.y });
+        }
+        return out;
+      };
+      const D2 = (2 * RADIUS * SQ3) * (2 * RADIUS * SQ3) - 1e-9; // radius is in pitch units; pixels are pitch·√3
+      for (let k = 1; k <= K_SAMPLES && !S.fault; k++) {
+        const f = k / K_SAMPLES;
+        const objs = collidables(f);
+        for (const o of objs) S.area.add(cellKey(axialRound(o.x, o.y)));
+        for (const arm of S.arms) OFFSETS[arm.grippers].forEach((_, gi) => {
+          const h = handF(arm, gi, f, M); S.area.add(cellKey(axialRound(h.x, h.y)));
+        });
+        for (let i = 0; i < objs.length; i++) for (let j = i + 1; j < objs.length; j++) {
+          const dx = objs[i].x - objs[j].x, dy = objs[i].y - objs[j].y;
+          if (dx * dx + dy * dy < D2) {
+            S.fault = { kind: 'collision', tick: S.tick, detail: `${objs[i].kind} ${objs[i].id} × ${objs[j].kind} ${objs[j].id} @ f=${k}/${K_SAMPLES}` };
+            break;
+          }
+        }
+      }
+      if (S.fault) return S;
+
+      // 4. glyphs — every transmutation acts on whatever rests on its cells (held or not)
+      for (const [c1, c2] of (puzzle.bonders || [])) {
+        const a1 = atomAt(c1), a2 = atomAt(c2);
+        if (a1 && a2 && !a1.bonds.has(a2.id)) { a1.bonds.add(a2.id); a2.bonds.add(a1.id); ev({ type: 'bond', a: a1.id, b: a2.id }); }
+      }
+      for (const [c1, c2] of (puzzle.debonders || [])) {
+        const a1 = atomAt(c1), a2 = atomAt(c2);
+        if (a1 && a2 && a1.bonds.has(a2.id)) { a1.bonds.delete(a2.id); a2.bonds.delete(a1.id); ev({ type: 'note', msg: 'bond severed' }); }
+      }
+      for (const g of (puzzle.calcifiers || [])) {
+        const a = atomAt(g);
+        if (a && CARDINALS.includes(a.elem)) { a.elem = 'Sa'; ev({ type: 'note', msg: 'calcified to salt' }); }
+      }
+      for (const [ce, cs] of (puzzle.duplicators || [])) {
+        const src = atomAt(ce), dst = atomAt(cs);
+        if (src && dst && CARDINALS.includes(src.elem) && dst.elem === 'Sa') { dst.elem = src.elem; ev({ type: 'note', msg: 'duplicated ' + src.elem }); }
+      }
+      const kill = new Set();
+      // conversion glyphs can't see bonded or held atoms (matches Opus Magnum)
+      const gripped = new Set();
+      for (const arm of S.arms) for (const h of arm.holds) if (h && h.kind === 'atom') gripped.add(h.id);
+      const loose = (a) => a && a.bonds.size === 0 && !gripped.has(a.id);
+      for (const [cm, cq] of (puzzle.projectors || [])) {
+        const m = atomAt(cm), q0 = atomAt(cq);
+        const q = loose(q0) ? q0 : null;
+        const rung = m ? METALS.indexOf(m.elem) : -1;
+        if (m && q && q.elem === 'Hg' && rung >= 0 && rung < METALS.length - 1 && !kill.has(q.id)) {
+          kill.add(q.id); m.elem = METALS[rung + 1];
+          ev({ type: 'note', msg: 'projection → ' + m.elem });
+        }
+      }
+      for (const [ca, cb, co] of (puzzle.purifiers || [])) {
+        const a0 = atomAt(ca), b0 = atomAt(cb);
+        const a = loose(a0) ? a0 : null, b = loose(b0) ? b0 : null;
+        const rung = a ? METALS.indexOf(a.elem) : -1;
+        if (a && b && a !== b && a.elem === b.elem && rung >= 0 && rung < METALS.length - 1
+            && !atomAt(co) && !kill.has(a.id) && !kill.has(b.id)) {
+          kill.add(a.id); kill.add(b.id);
+          S.atoms.push({ id: S.nextAtom++, cell: co.slice(), elem: METALS[rung + 1], bonds: new Set() });
+          ev({ type: 'note', msg: 'purified → ' + METALS[rung + 1] });
+        }
+      }
+      for (const [ca, cb, cv, cm] of (puzzle.animismus || [])) {
+        const a0 = atomAt(ca), b0 = atomAt(cb);
+        const a = loose(a0) ? a0 : null, b = loose(b0) ? b0 : null;
+        if (a && b && a !== b && a.elem === 'Sa' && b.elem === 'Sa' && !atomAt(cv) && !atomAt(cm)
+            && !kill.has(a.id) && !kill.has(b.id)) {
+          kill.add(a.id); kill.add(b.id);
+          S.atoms.push({ id: S.nextAtom++, cell: cv.slice(), elem: 'Vi', bonds: new Set() });
+          S.atoms.push({ id: S.nextAtom++, cell: cm.slice(), elem: 'Mo', bonds: new Set() });
+          ev({ type: 'note', msg: 'animismus → vitae + mors' });
+        }
+      }
+      for (const g of (puzzle.disposals || [])) {
+        const a = atomAt(g);
+        if (loose(a)) { kill.add(a.id); ev({ type: 'note', msg: 'disposed ' + a.elem }); }
+      }
+      if (kill.size) {
+        S.atoms = S.atoms.filter(a => !kill.has(a.id));
+        for (const a of S.atoms) for (const id of [...a.bonds]) if (kill.has(id)) a.bonds.delete(id);
+        for (const arm of S.arms) arm.holds = arm.holds.map(h =>
+          (h && h.kind === 'atom' && kill.has(h.id)) ? null : h);
+      }
+
+      // 5. output
+      const out = puzzle.output;
+      if (out) {
+        const heldIds = new Set();
+        for (const arm of S.arms) for (const h of arm.holds) if (h && h.kind === 'atom') for (const a of molecule(S.atoms.find(x => x.id === h.id) || { id: -1, bonds: new Set() })) heldIds.add(a.id);
+        const got = out.cells.map((c, i) => {
+          const a = atomAt(c);
+          return a && a.elem === out.elems[i] && !heldIds.has(a.id) ? a : null;
+        });
+        if (got.every(Boolean)
+          && out.bonds.every(([i, j]) => got[i].bonds.has(got[j].id))
+          && molecule(got[0]).length === out.cells.length) {
+          S.atoms = S.atoms.filter(a => !got.includes(a));
+          S.products++;
+          ev({ type: 'product', n: S.products });
+          if (S.products >= caps.goal) { S.cycles = S.tick; ev({ type: 'complete', cycles: S.cycles }); }
+        }
+      }
+
+      if (S.cycles === null && S.tick >= caps.cycles) S.fault = { kind: 'exhaustion', tick: S.tick, detail: 'cycle cap' };
+      return S;
+    }
+
+    // ---------- render geometry ----------
+    function renderState(f) {
+      const M = S.motion;
+      const arms = S.arms.map(arm => {
+        let base, rotF, angF;
+        if (M) { const p = poseF(arm, f, M); base = [p.x, p.y]; rotF = p.rotF; angF = M.angle0[arm.id] + M.delta[arm.id] * f; }
+        else { const p = pose(arm); const px = toPx(p.pos); base = px; rotF = p.rot; angF = arm.angle; }
+        const hands = OFFSETS[arm.grippers].map((off, gi) => {
+          const dF = rotF + angF + off;
+          const a = dirRadF(dF);
+          return { x: base[0] + arm.len * SQ3 * Math.cos(a), y: base[1] + arm.len * SQ3 * Math.sin(a), holding: !!arm.holds[gi], ang: a };
+        });
+        return { id: arm.id, base, hands, len: arm.len, elbow: !!arm.mount.elbow, carried: arm.carriers.length > 0 };
+      });
+      let atoms;
+      if (M && f < 1) {
+        atoms = M.atoms.map(m => {
+          if (!m.holder) { const p = toPx(m.cell0); return { id: m.id, elem: m.elem, x: p[0], y: p[1] }; }
+          const arm = byId[m.holder.armId];
+          const hF = handF(arm, m.holder.grip, f, M), h0F = handF(arm, m.holder.grip, 0, M);
+          const p0 = toPx(m.cell0);
+          const dA = (hF.dF - h0F.dF + m.holder.s * f) * Math.PI / 3;
+          const rx = p0[0] - h0F.x, ry = p0[1] - h0F.y;
+          return { id: m.id, elem: m.elem, x: hF.x + rx * Math.cos(dA) - ry * Math.sin(dA), y: hF.y + rx * Math.sin(dA) + ry * Math.cos(dA) };
+        });
+      } else {
+        atoms = S.atoms.map(a => { const p = toPx(a.cell); return { id: a.id, elem: a.elem, x: p[0], y: p[1] }; });
+      }
+      // during the animated tick, show only bonds that existed BEFORE the motion —
+      // a bond formed this tick appears when its atom lands, not while approaching
+      let bondPairs;
+      if (M && f < 1) {
+        bondPairs = M.bonds0;
+      } else {
+        bondPairs = [];
+        const seen = new Set();
+        for (const a of S.atoms) for (const id of a.bonds) {
+          const kk = Math.min(a.id, id) + '-' + Math.max(a.id, id);
+          if (!seen.has(kk)) { seen.add(kk); bondPairs.push([a.id, id]); }
+        }
+      }
+      return { arms, atoms, bonds: bondPairs, tick: S.tick, products: S.products, fault: S.fault };
+    }
+
+    return {
+      step,
+      renderState,
+      get state() { return S; },
+      metrics() {
+        return { cost: S.cost, cycles: S.cycles, area: S.area.size,
+          sum: S.cycles !== null ? S.cost + S.cycles + S.area.size : null };
+      },
+      run(n) { for (let i = 0; i < n && !S.fault && S.cycles === null; i++) step(); return this; },
+    };
+  }
+
+  const GW = { createSim, DIRS, rotK, toPx, fromPx: axialRound, PRICE, GLYPH_PRICE, ELBOW_STEP, RADIUS, K_SAMPLES, DEFAULT_CAPS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = GW;
+  else root.GW = GW;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+/*
+ * GREAT WORK! — machine codec v1
+ *
+ * The canonical serialization of a submission: the exact bytes a player will
+ * one day put in calldata, and the share-string the editor emits today.
+ *
+ * Layout (all integers are LEB128 varints unless noted):
+ *   u8       version (1)
+ *   varint   arm count
+ *   per arm, in submission order (order is the tiebreak identity — it is preserved):
+ *     u8     flags: bits 0-1 gripper code (0,1,2,3 -> 1,2,3,6 grippers)
+ *                   bits 2-3 length-1 (0..2)
+ *                   bit  4   mounted on an elbow
+ *     mount: elbow -> varint parent index (must precede this arm), varint at (1..len of parent)
+ *            ground -> zigzag varint q, zigzag varint r
+ *     u8     initial angle (0..5)
+ *     varint delay block count
+ *     varint tape length
+ *     tape   ops packed 3 bits each (G D ↻ ↺ ↷ ↶ · -> 0..6), little-endian within bytes
+ *
+ * Share strings are base64url of those bytes. Arm ids are not serialized —
+ * they are labels, not identity; decode regenerates them as a0, a1, …
+ */
+(function (root) {
+  'use strict';
+
+  const OPS = 'GD+-PQW';                       // 3-bit opcodes, in this order
+  const GRIPS = [1, 2, 3, 6];
+  const VERSION = 1;
+
+  function zigzag(n) { return n < 0 ? -2 * n - 1 : 2 * n; }
+  function unzigzag(n) { return n & 1 ? -(n + 1) / 2 : n / 2; }
+
+  function encodeMachine(machine) {
+    const out = [];
+    const push = (b) => out.push(b & 0xff);
+    const varint = (n) => { do { let b = n & 0x7f; n >>>= 7; if (n) b |= 0x80; push(b); } while (n); };
+    const arms = machine.arms;
+    const index = new Map(arms.map((a, i) => [a.id, i]));
+
+    push(VERSION);
+    varint(arms.length);
+    arms.forEach((a, i) => {
+      const grip = GRIPS.indexOf(a.grippers || 1);
+      const len = (a.len || 1) - 1;
+      if (grip < 0) throw new Error('codec: bad gripper count');
+      if (len < 0 || len > 2) throw new Error('codec: bad length');
+      const elbow = a.mount.elbow;
+      push(grip | (len << 2) | (elbow ? 16 : 0));
+      if (elbow) {
+        const p = index.get(elbow.parent);
+        if (p === undefined || p >= i) throw new Error('codec: elbow parent must precede its child');
+        varint(p); varint(elbow.at);
+      } else {
+        varint(zigzag(a.mount.ground[0])); varint(zigzag(a.mount.ground[1]));
+      }
+      push(((a.angle || 0) % 6 + 6) % 6);
+      const tape = a.tape || {};
+      const ops = tape.ops || ['W'];
+      varint(tape.delay || 0);
+      varint(ops.length);
+      let acc = 0, bits = 0;
+      for (const op of ops) {
+        const code = OPS.indexOf(op);
+        if (code < 0) throw new Error('codec: bad op ' + op);
+        acc |= code << bits; bits += 3;
+        while (bits >= 8) { push(acc); acc >>>= 8; bits -= 8; }
+      }
+      if (bits) push(acc);
+    });
+    return Uint8Array.from(out);
+  }
+
+  function decodeMachine(bytes) {
+    let p = 0;
+    const u8 = () => { if (p >= bytes.length) throw new Error('codec: truncated'); return bytes[p++]; };
+    const varint = () => {
+      let n = 0, shift = 0, b;
+      do { b = u8(); n |= (b & 0x7f) << shift; shift += 7; } while (b & 0x80);
+      return n >>> 0;
+    };
+    if (u8() !== VERSION) throw new Error('codec: unknown version');
+    const count = varint();
+    const arms = [];
+    for (let i = 0; i < count; i++) {
+      const flags = u8();
+      const grippers = GRIPS[flags & 3];
+      const len = ((flags >> 2) & 3) + 1;
+      if (len > 3) throw new Error('codec: bad length');
+      let mount;
+      if (flags & 16) {
+        const parent = varint(), at = varint();
+        if (parent >= i) throw new Error('codec: elbow parent must precede its child');
+        mount = { elbow: { parent: 'a' + parent, at } };
+      } else {
+        const q = unzigzag(varint()), r = unzigzag(varint());
+        mount = { ground: [q, r] };
+      }
+      const angle = u8();
+      if (angle > 5) throw new Error('codec: bad angle');
+      const delay = varint();
+      const opsLen = varint();
+      const ops = [];
+      let acc = 0, bits = 0;
+      for (let k = 0; k < opsLen; k++) {
+        if (bits < 3) { acc |= u8() << bits; bits += 8; }
+        const code = acc & 7; acc >>>= 3; bits -= 3;
+        if (code > 6) throw new Error('codec: bad opcode');
+        ops.push(OPS[code]);
+      }
+      arms.push({ id: 'a' + i, grippers, len, mount, angle, tape: { delay, ops } });
+    }
+    if (p !== bytes.length) throw new Error('codec: trailing bytes');
+    return { arms };
+  }
+
+  // -- base64url share strings --
+  const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  function toString(bytes) {
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 3) {
+      const a = bytes[i], b = i + 1 < bytes.length ? bytes[i + 1] : 0, c = i + 2 < bytes.length ? bytes[i + 2] : 0;
+      s += B64[a >> 2] + B64[((a & 3) << 4) | (b >> 4)];
+      if (i + 1 < bytes.length) s += B64[((b & 15) << 2) | (c >> 6)];
+      if (i + 2 < bytes.length) s += B64[c & 63];
+    }
+    return s;
+  }
+  function fromString(s) {
+    const val = (ch) => { const v = B64.indexOf(ch); if (v < 0) throw new Error('codec: bad character'); return v; };
+    const out = [];
+    for (let i = 0; i < s.length; i += 4) {
+      const chunk = s.slice(i, i + 4);
+      if (chunk.length === 1) throw new Error('codec: bad string length');
+      const a = val(chunk[0]), b = val(chunk[1]);
+      out.push((a << 2) | (b >> 4));
+      if (chunk.length > 2) { const c = val(chunk[2]); out.push(((b & 15) << 4) | (c >> 2));
+        if (chunk.length > 3) { const d = val(chunk[3]); out.push(((c & 3) << 6) | d); } }
+    }
+    return Uint8Array.from(out);
+  }
+
+  const encodeString = (machine) => toString(encodeMachine(machine));
+  const decodeString = (s) => decodeMachine(fromString(s));
+
+  const CODEC = { encodeMachine, decodeMachine, toString, fromString, encodeString, decodeString, VERSION };
+  if (typeof module !== 'undefined' && module.exports) module.exports = CODEC;
+  else root.GWCodec = CODEC;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+/* GREAT WORK! — example puzzles & machines (shared by tests and the lab) */
+(function (root) {
+  'use strict';
+
+  const EXAMPLES = [
+    {
+      key: 'courier',
+      name: 'The Courier',
+      blurb: 'One arm, no elbows: grab, bond, deliver, repeat. The floor every builder starts from.',
+      expect: { cycles: 142 },
+      puzzle: {
+        inputs: [{ cell: [1, -1], elem: 'Pb' }, { cell: [1, 0], elem: 'Hg' }],
+        bonders: [[[-1, 0], [0, -1]]],
+        output: { cells: [[0, 1], [-1, 1]], elems: ['Hg', 'Pb'], bonds: [[0, 1]] },
+      },
+      machine: {
+        arms: [
+          { id: 'A', grippers: 1, len: 1, mount: { ground: [0, 0] }, angle: 5,
+            tape: { ops: ['G', '-', 'D', '+', '+', 'G', '+', '+', '+', 'D', 'G', '-', '-', 'D', '-', '-'] } },
+        ],
+      },
+    },
+    {
+      key: 'ferris',
+      name: 'The Ferris',
+      blurb: 'An elbow arm rides its parent between two worlds: Pb-side and Hg-side share one child tape. The bonder doubles as the product glyph, so the compound vanishes the instant it forms.',
+      expect: { cycles: 75 },
+      puzzle: {
+        inputs: [{ cell: [2, -1], elem: 'Pb' }, { cell: [0, 2], elem: 'Hg' }],
+        bonders: [[[2, 0], [1, 1]]],
+        output: { cells: [[3, 1], [3, 0]], elems: ['Pb', 'Hg'], bonds: [[0, 1]] },
+      },
+      machine: {
+        arms: [
+          { id: 'P', grippers: 1, len: 2, mount: { ground: [0, 0] }, angle: 0,
+            tape: { ops: ['W', 'W', 'W', '+', 'W', 'W', 'W', '-'] } },
+          { id: 'C', grippers: 1, len: 1, mount: { elbow: { parent: 'P', at: 1 } }, angle: 5,
+            tape: { ops: ['G', '+', 'D', 'W', 'G', '-', 'D', 'W'] } },
+          { id: 'X', grippers: 1, len: 1, mount: { ground: [2, 1] }, angle: 4,
+            tape: { delay: 7, ops: ['G', '+', '+', 'D', '-', '-', 'W', 'W'] } },
+        ],
+      },
+    },
+    {
+      key: 'crane',
+      name: 'The Crane',
+      blurb: 'A worker arm runs one six-step loop forever. The crane relocates it — mid-loop, tapes still ticking — so the same coordinate-free tape ferries lead in one place and quicksilver in another.',
+      expect: { cycles: 147 },
+      puzzle: {
+        inputs: [{ cell: [3, -1], elem: 'Pb' }, { cell: [3, 2], elem: 'Hg' }],
+        bonders: [[[1, 1], [1, 2]]],
+        output: { cells: [[0, 4], [1, 4]], elems: ['Hg', 'Pb'], bonds: [[0, 1]] },
+      },
+      machine: {
+        arms: [
+          { id: 'W', grippers: 1, len: 1, mount: { ground: [2, 0] }, angle: 5,
+            tape: { ops: ['G', '+', '+', '+', 'D', '-', '-', '-'] } },
+          { id: 'C', grippers: 1, len: 2, mount: { ground: [0, 2] }, angle: 5,
+            tape: { delay: 5, ops: ['G', '+', 'D', 'W', 'W', 'W', 'W', 'W', 'G', '-', 'D', 'W', 'W', 'W', 'W', 'W'] } },
+          { id: 'X', grippers: 1, len: 1, mount: { ground: [0, 3] }, angle: 5,
+            tape: { delay: 15, ops: ['G', '+', '+', 'D', '-', '-', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W'] } },
+        ],
+      },
+    },
+    {
+      key: 'beadwheel',
+      name: 'The Bead Wheel',
+      blurb: 'Tria Prima: salt, quicksilver, sulfur in one chain. The wheel carries the growing molecule around its ring while the feeder threads beads onto it — passing within a whisker of a fault, legally.',
+      expect: { cycles: 125 },
+      puzzle: {
+        inputs: [{ cell: [-1, 0], elem: 'Sa' }, { cell: [1, -2], elem: 'Hg' }, { cell: [-1, -2], elem: 'S' }],
+        bonders: [[[0, -1], [1, -1]]],
+        output: { cells: [[-1, 1], [0, 1], [1, 0]], elems: ['Sa', 'Hg', 'S'], bonds: [[0, 1], [1, 2]] },
+      },
+      machine: {
+        arms: [
+          { id: 'W', grippers: 1, len: 1, mount: { ground: [0, 0] }, angle: 3,
+            tape: { ops: ['G', '+', '+', 'W', '+', 'W', 'W', 'W', 'W', 'W', '+', '+', 'D', '+'] } },
+          { id: 'F', grippers: 1, len: 1, mount: { ground: [0, -2] }, angle: 0,
+            tape: { delay: 1, ops: ['G', 'W', '+', 'D', '+', '+', 'G', '-', '-', 'D', '-', 'W', 'W', 'W'] } },
+        ],
+      },
+    },
+    {
+      key: 'goldladder',
+      name: 'The Gold Ladder',
+      blurb: 'Lead to tin to iron to copper to silver to gold: a dual-gripper shuttle feeds quicksilver to the projection glyph — one hand delivering while the other reloads — and the courier extracts the finished gold.',
+      expect: { cycles: 277 },
+      puzzle: {
+        inputs: [{ cell: [-1, 0], elem: 'Pb' }, { cell: [3, -3], elem: 'Hg' }],
+        projectors: [[[1, 0], [1, -1]]],
+        output: { cells: [[0, 1]], elems: ['Au'], bonds: [] },
+      },
+      machine: {
+        arms: [
+          { id: 'A', grippers: 1, len: 1, mount: { ground: [0, 0] }, angle: 3,
+            tape: { ops: ['G', '-', '-', '-', 'D',
+                          'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W', 'W',
+                          'G', '+', 'D', '+', '+'] } },
+          { id: 'S', grippers: 2, len: 1, mount: { ground: [2, -2] }, angle: 5,
+            tape: { delay: 1,
+                    ops: ['G', '+', '+', '+', 'D', 'G', '+', '+', '+', 'D', 'G', '+', '+', '+', 'D',
+                          'G', '+', '+', '+', 'D', 'G', '+', '+', '+', 'D', 'W', 'W', 'W', 'W', 'W', 'W'] } },
+        ],
+      },
+    },
+    {
+      key: 'leachworks',
+      name: 'The Leaching Works',
+      blurb: 'Water alone becomes a chain of salt, salt, mors, and vitae. Four waters calcify in transit; an animismus glyph — its shape fixed, like every glyph — turns a salt pair into vitae and mors; and a rocking wheel drags the growing chain back and forth across a single bonder before laying the finished compound around its own hub. Six arms, one product every twenty ticks.',
+      expect: { cycles: 179 },
+      puzzle: {
+        inputs: [
+          { cell: [-3, 0], elem: 'Wa' }, { cell: [1, -3], elem: 'Wa' },
+          { cell: [4, 0], elem: 'Wa' }, { cell: [4, -5], elem: 'Wa' },
+        ],
+        calcifiers: [[-1, -1], [0, -2], [4, -2], [4, -4]],
+        animismus: [[[2, -2], [3, -3], [3, -2], [2, -3]]],
+        bonders: [[[0, -1], [1, -1]]],
+        output: {
+          cells: [[1, 0], [0, 1], [-1, 1], [-1, 0]],
+          elems: ['Sa', 'Sa', 'Mo', 'Vi'],
+          bonds: [[0, 1], [1, 2], [2, 3]],
+        },
+      },
+      machine: {
+        arms: [
+          { id: 'W', grippers: 1, len: 1, mount: { ground: [0, 0] }, angle: 3,
+            tape: { delay: 5, ops: ['G','+','-','W','W','W','W','W','-','W','W','-','-','D','+','+','+','W','W','W'] } },
+          { id: 'H', grippers: 1, len: 1, mount: { ground: [-2, 0] }, angle: 3,
+            tape: { ops: ['G','+','+','+','D','-','-','-','W','W','W','W','W','W','W','W','W','W','W','W'] } },
+          { id: 'F', grippers: 1, len: 1, mount: { ground: [1, -2] }, angle: 4,
+            tape: { delay: 3, ops: ['G','-','-','-','D','-','-','G','+','+','D','-','-','-','W','W','W','W','W','W'] } },
+          { id: 'V', grippers: 1, len: 1, mount: { ground: [2, -1] }, angle: 5,
+            tape: { delay: 13, ops: ['G','-','-','D','+','+','W','W','W','W','W','W','W','W','W','W','W','W','W','W'] } },
+          { id: 'P', grippers: 1, len: 2, mount: { ground: [2, 0] }, angle: 0,
+            tape: { delay: 4, ops: ['G','-','-','D','+','+','W','W','W','W','W','W','W','W','W','W','W','W','W','W'] } },
+          { id: 'Q', grippers: 1, len: 1, mount: { ground: [3, -4] }, angle: 5,
+            tape: { delay: 5, ops: ['G','+','+','D','-','-','W','W','W','W','W','W','W','W','W','W','W','W','W','W'] } },
+        ],
+      },
+    },
+    {
+      key: 'airshipfuel',
+      name: 'Airship Fuel',
+      blurb: 'Imported from Opus Magnum (chapter one). Fire alone becomes a zigzag of salt and flame. A dimer factory bonds salt to fire — the salt calcified in transit — and two joiner arms pose the halves over a second bonder: one pivot for the left half, two for the right, because the zigzag bends both ways.',
+      expect: { cycles: 162 },
+      puzzle: {
+        inputs: [
+          { cell: [3, 2], elem: 'Fi' }, { cell: [5, 0], elem: 'Fi' }, { cell: [0, -3], elem: 'Fi' },
+        ],
+        calcifiers: [[3, 1]],
+        bonders: [[[2, 1], [3, 0]], [[0, 0], [1, 0]]],
+        output: { cells: [[-3, 4], [-3, 3], [-2, 2], [-2, 1]], elems: ['Sa', 'Fi', 'Fi', 'Sa'],
+                  bonds: [[0, 1], [1, 2], [2, 3]] },
+      },
+      machine: {
+        arms: [
+          { id: 'S', grippers: 1, len: 1, mount: { ground: [2, 2] }, angle: 0,
+            tape: { ops: ['G','-','-','D','+','+','W','W','W','G','-','-','D','+','+','W','W','W'] } },
+          { id: 'F', grippers: 1, len: 2, mount: { ground: [5, -2] }, angle: 1,
+            tape: { delay: 1, ops: ['G','+','D','-','W','W','W','W','W','G','+','D','-','W','W','W','W','W'] } },
+          { id: 'J', grippers: 1, len: 3, mount: { ground: [0, 3] }, angle: 5,
+            tape: { delay: 3, ops: ['G','-','P','W','W','W','W','W','W','W','W','W','W','-','D','+','+','W'] } },
+          { id: 'K', grippers: 1, len: 2, mount: { ground: [1, 2] }, angle: 5,
+            tape: { delay: 12, ops: ['G','Q','Q','-','D','+','W','W','W','W','W','W','W','W','W','W','W','W'] } },
+        ],
+      },
+    },
+    {
+      key: 'surrenderflare',
+      name: 'Surrender Flare',
+      blurb: 'Imported from Opus Magnum (chapter two). An iron core sealed inside six salt petals must come out copper — but the projection glyph cannot reach a surrounded core. So: sever one petal, walk the open flower around the wheel past the quicksilver, pivot the core onto a bonder, and let the porter hand the petal back. The porter then carries the whole flower to the product glyph.',
+      expect: { cycles: 162 },
+      puzzle: {
+        inputs: [
+          { cells: [[2, -2], [3, -2], [2, -1], [1, -1], [1, -2], [2, -3], [3, -3]],
+            elems: ['Fe', 'Sa', 'Sa', 'Sa', 'Sa', 'Sa', 'Sa'],
+            bonds: [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6]] },
+          { cell: [3, 2], elem: 'Hg' },
+        ],
+        debonders: [[[0, -2], [-1, -2]]],
+        projectors: [[[0, 2], [1, 2]]],
+        bonders: [[[-1, -1], [-2, -1]]],
+        output: { cells: [[-4, -1], [-3, -1], [-4, 0], [-5, 0], [-5, -1], [-4, -2], [-3, -2]],
+                  elems: ['Cu', 'Sa', 'Sa', 'Sa', 'Sa', 'Sa', 'Sa'],
+                  bonds: [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6]] },
+      },
+      machine: {
+        arms: [
+          { id: 'M', grippers: 1, len: 1, mount: { ground: [0, 0] }, angle: 5,
+            tape: { ops: ['G','-','W','W','+','+','+','W','W','W','+','P','+','W','D','+','+','W'] } },
+          { id: 'P', grippers: 1, len: 1, mount: { ground: [-2, -2] }, angle: 0,
+            tape: { delay: 3, ops: ['G','-','W','W','W','W','W','-','-','-','-','W','+','+','D','-','-','-'] } },
+          { id: 'Q', grippers: 1, len: 2, mount: { ground: [1, 4] }, angle: 5,
+            tape: { delay: 7, ops: ['G','-','D','+','W','W','W','W','W','W','W','W','W','W','W','W','W','W'] } },
+        ],
+      },
+    },
+    {
+      key: 'ablativecrystal',
+      name: 'Ablative Crystal',
+      blurb: 'Imported from Opus Magnum (journal III) — and still unsolved here. Two silver-core flowers must become one thirteen-atom crystal: a gold core, a ring of six fire, six salt at the points, twenty-four bonds. The reference machine below is an empty gesture; it idles until the cycle cap rejects it. The first machine to seal this record earns the name Great Work.',
+      expect: { fault: 'exhaustion' },
+      puzzle: {
+        caps: { cycles: 120 },
+        inputs: [
+          { cells: [[4, 0], [5, 0], [4, 1], [3, 1], [3, 0], [4, -1], [5, -1]],
+            elems: ['Ag', 'Sa', 'Fi', 'Sa', 'Fi', 'Sa', 'Fi'],
+            bonds: [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6]] },
+        ],
+        purifiers: [[[0, -3], [1, -3], [0, -2]]],
+        bonders: [[[-1, 3], [0, 3]]],
+        debonders: [[[2, 2], [3, 2]]],
+        output: {
+          cells: [[-4, 0], [-3, 0], [-4, 1], [-5, 1], [-5, 0], [-4, -1], [-3, -1],
+                  [-3, 1], [-5, 2], [-6, 1], [-5, -1], [-3, -2], [-2, -1]],
+          elems: ['Au', 'Fi', 'Fi', 'Fi', 'Fi', 'Fi', 'Fi',
+                  'Sa', 'Sa', 'Sa', 'Sa', 'Sa', 'Sa'],
+          bonds: [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6],
+                  [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 1],
+                  [1, 7], [2, 7], [2, 8], [3, 8], [3, 9], [4, 9],
+                  [4, 10], [5, 10], [5, 11], [6, 11], [6, 12], [1, 12]],
+        },
+      },
+      machine: {
+        arms: [
+          { id: 'A', grippers: 1, len: 1, mount: { ground: [0, 5] }, angle: 0, tape: { ops: ['W'] } },
+        ],
+      },
+    },
+    {
+      key: 'ouroboros',
+      name: 'The Ouroboros',
+      blurb: 'Two arms grab each other\'s bases in the same instant. The grab graph must remain a forest — the serpent that eats its own tail is rejected on the spot.',
+      expect: { fault: 'grab-cycle' },
+      puzzle: {},
+      machine: {
+        arms: [
+          { id: 'A', grippers: 1, len: 1, mount: { ground: [0, 0] }, angle: 0, tape: { ops: ['G', 'W', 'W'] } },
+          { id: 'B', grippers: 1, len: 1, mount: { ground: [1, 0] }, angle: 3, tape: { ops: ['G', 'W', 'W'] } },
+        ],
+      },
+    },
+    {
+      key: 'tugofwar',
+      name: 'The Tug of War',
+      blurb: 'Two arms hold one molecule; one of them turns. Every object follows at most one rigid motion — this machine is rejected at tick 3, and that rejection is the whole show.',
+      expect: { fault: 'overconstraint' },
+      puzzle: {
+        atoms: [{ cell: [1, 0], elem: 'Pb' }, { cell: [2, -1], elem: 'Hg' }],
+        bonders: [[[1, 0], [2, -1]]],
+      },
+      machine: {
+        arms: [
+          { id: 'A', grippers: 1, len: 1, mount: { ground: [0, 0] }, angle: 0,
+            tape: { ops: ['W', 'G', '+', 'W'] } },
+          { id: 'B', grippers: 1, len: 1, mount: { ground: [3, -1] }, angle: 3,
+            tape: { ops: ['W', 'G', 'W', 'W'] } },
+        ],
+      },
+    },
+  ];
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = EXAMPLES;
+  else root.GW_EXAMPLES = EXAMPLES;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const EXAMPLES = window.GW_EXAMPLES, CODEC = window.GWCodec;
+  const ELEMS = {
+    Pb: { fill: '#4A4640', label: '#F1E9D6' }, Sn: { fill: '#9A968C', label: '#2A2318' },
+    Fe: { fill: '#6E5F52', label: '#F1E9D6' }, Cu: { fill: '#A0622B', label: '#F1E9D6' },
+    Ag: { fill: '#D6D2CB', label: '#2A2318' }, Au: { fill: '#C9A227', label: '#2A2318' },
+    Hg: { fill: '#BDB9AF', label: '#2A2318' }, Sa: { fill: '#F6F1E2', label: '#2A2318' },
+    S:  { fill: '#D9A93A', label: '#2A2318' }, Ai: { fill: '#CBD8DC', label: '#2A2318' },
+    Ea: { fill: '#7A6E4F', label: '#F1E9D6' }, Fi: { fill: '#C25436', label: '#F1E9D6' },
+    Wa: { fill: '#5B7EA6', label: '#F1E9D6' }, Vi: { fill: '#C97B8E', label: '#2A2318' },
+    Mo: { fill: '#443C46', label: '#F1E9D6' },
+  };
+  const SPECIAL_GLYPHS = [
+    ['debonders', 'DEBOND'], ['calcifiers', 'CALCIFY'], ['duplicators', 'DUPE'],
+    ['projectors', 'PROJECT'], ['purifiers', 'PURIFY'], ['animismus', 'ANIMA'],
+    ['disposals', 'DISPOSE'],
+  ];
+  const GLYPH = { G: 'G', D: 'D', '+': '↻', '-': '↺', P: '↷', Q: '↶', W: '·' };
+  const PITCH = Math.sqrt(3);
+  const CW = 980, CH = 560;
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = CW * dpr; canvas.height = CH * dpr;
+  canvas.style.aspectRatio = `${CW} / ${CH}`;
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- state ----------
+  let pIdx = 0;                       // puzzle index into EXAMPLES
+  let machine = { arms: [] };         // working machine (edit-mode truth)
+  let mode = 'edit';                  // 'edit' | 'run'
+  let sim = null;                     // run-mode simulation
+  let view = { s: 40, ox: CW / 2, oy: CH / 2 };
+  let tool = 'select', cfg = { grippers: 1, len: 1 };
+  let selId = null;                   // selected arm id
+  let cursor = null;                  // tape cursor {armId, pos}
+  let hoverCell = null, elbowParent = null;
+  let running = false, stepMs = 350, phase = 1, done = false;
+  let drag = null;                    // {armId, moved} | {pan:true, x, y}
+
+  const puzzle = () => EXAMPLES[pIdx].puzzle;
+  const key = () => EXAMPLES[pIdx].key;
+  const armById = (id) => machine.arms.find(a => a.id === id);
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+
+  // ---------- geometry ----------
+  const P = (x, y) => [view.ox + view.s * x, view.oy + view.s * y];
+  const Pc = (cell) => { const p = GW.toPx(cell); return P(p[0], p[1]); };
+  const cellAt = (mx, my) => GW.fromPx((mx - view.ox) / view.s, (my - view.oy) / view.s);
+  const eq = (a, b) => a && b && a[0] === b[0] && a[1] === b[1];
+
+  // initial pose of every arm (edit-mode drawing + hit tests); mirrors engine.pose at t0
+  function initPoses() {
+    const out = {}, guard = new Set();
+    const pose = (arm) => {
+      if (out[arm.id]) return out[arm.id];
+      if (guard.has(arm.id)) return { pos: [0, 0], rot: 0 };
+      guard.add(arm.id);
+      let p;
+      if (arm.mount.elbow) {
+        const par = armById(arm.mount.elbow.parent);
+        if (!par) p = { pos: [0, 0], rot: 0 };
+        else {
+          const pp = pose(par);
+          const d = ((pp.rot + par.angle) % 6 + 6) % 6;
+          p = { pos: [pp.pos[0] + GW.DIRS[d][0] * arm.mount.elbow.at, pp.pos[1] + GW.DIRS[d][1] * arm.mount.elbow.at], rot: d };
+        }
+      } else p = { pos: arm.mount.ground.slice(), rot: 0 };
+      out[arm.id] = p; return p;
+    };
+    machine.arms.forEach(pose);
+    return out;
+  }
+  const GRIPOFF = { 1: [0], 2: [0, 3], 3: [0, 2, 4], 6: [0, 1, 2, 3, 4, 5] };
+
+  function costOf() {
+    let cost = 0;
+    for (const a of machine.arms) {
+      let depth = 0, cur = a, guard = 0;
+      while (cur && cur.mount.elbow && guard++ < 20) { cur = armById(cur.mount.elbow.parent); depth++; }
+      cost += GW.PRICE[a.grippers] + GW.ELBOW_STEP * depth;
+    }
+    for (const fam in GW.GLYPH_PRICE) cost += (puzzle()[fam] || []).length * GW.GLYPH_PRICE[fam];
+    return cost;
+  }
+
+  // validation preview: try building a sim; return null or the rejection reason
+  function validate() {
+    if (!machine.arms.length) return 'place an arm to begin';
+    try { GW.createSim(puzzle(), machine); return null; }
+    catch (e) { return String(e.message || e).replace('invalid machine: ', ''); }
+  }
+
+  // ---------- view fitting ----------
+  function fitView() {
+    const cells = [];
+    const pz = puzzle();
+    for (const fam in GW.GLYPH_PRICE) for (const g of (pz[fam] || [])) {
+      for (const c of (Array.isArray(g[0]) ? g : [g])) cells.push(c);
+    }
+    for (const g of (pz.inputs || [])) (g.cell ? [g.cell] : g.cells).forEach(c => cells.push(c));
+    for (const c of ((pz.output && pz.output.cells) || [])) cells.push(c);
+    for (const a of machine.arms) if (a.mount.ground) cells.push(a.mount.ground);
+    if (!cells.length) cells.push([0, 0]);
+    const pts = cells.map(GW.toPx);
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const minX = Math.min(...xs) - 3.2, maxX = Math.max(...xs) + 3.2;
+    const minY = Math.min(...ys) - 3.2, maxY = Math.max(...ys) + 3.2;
+    const s = Math.min(42, CW / (maxX - minX), CH / (maxY - minY));
+    view = { s, ox: CW / 2 - s * (minX + maxX) / 2, oy: CH / 2 - s * (minY + maxY) / 2 };
+  }
+
+  function hexPath(x, y, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 3 * i + Math.PI / 6;
+      i === 0 ? ctx.moveTo(x + r * Math.cos(a), y + r * Math.sin(a)) : ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a));
+    }
+    ctx.closePath();
+  }
+
+  // ---------- drawing ----------
+  function drawBoard() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#EAE0C9'; ctx.fillRect(0, 0, CW, CH);
+    ctx.strokeStyle = 'rgba(160,140,95,0.18)'; ctx.lineWidth = 1;
+    for (let q = -16; q <= 16; q++) for (let r = -16; r <= 16; r++) {
+      const [x, y] = Pc([q, r]);
+      if (x < -40 || x > CW + 40 || y < -40 || y > CH + 40) continue;
+      hexPath(x, y, view.s * PITCH / 2 * 1.11); ctx.stroke();
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const pz = puzzle();
+    for (const [c1, c2] of (pz.bonders || [])) {
+      for (const c of [c1, c2]) {
+        const [x, y] = Pc(c);
+        hexPath(x, y, view.s * PITCH / 2 * 1.08);
+        ctx.fillStyle = 'rgba(160,118,43,0.16)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(160,118,43,0.7)'; ctx.lineWidth = 1.4; ctx.stroke();
+      }
+      const [x1, y1] = Pc(c1), [x2, y2] = Pc(c2);
+      ctx.strokeStyle = 'rgba(160,118,43,0.85)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    ctx.font = `700 9px 'Courier Prime', monospace`;
+    for (const [fam, label] of SPECIAL_GLYPHS) {
+      for (const g of (pz[fam] || [])) {
+        const cells = Array.isArray(g[0]) ? g : [g];
+        for (const c of cells) {
+          const [x, y] = Pc(c);
+          hexPath(x, y, view.s * PITCH / 2 * 1.08);
+          ctx.fillStyle = 'rgba(140,59,46,0.12)'; ctx.fill();
+          ctx.strokeStyle = 'rgba(140,59,46,0.6)'; ctx.lineWidth = 1.4; ctx.stroke();
+        }
+        for (let i = 1; i < cells.length; i++) {
+          const [x1, y1] = Pc(cells[i - 1]), [x2, y2] = Pc(cells[i]);
+          ctx.strokeStyle = 'rgba(140,59,46,0.55)'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        }
+        const [lx, ly] = Pc(cells[0]);
+        ctx.fillStyle = 'rgba(140,59,46,0.8)';
+        ctx.fillText(label, lx, ly - view.s * 1.0);
+      }
+    }
+    ctx.font = `700 10px 'Courier Prime', monospace`;
+    for (const g of (pz.inputs || [])) {
+      const cells = g.cell ? [g.cell] : g.cells;
+      const elems = g.cell ? [g.elem] : g.elems;
+      ctx.setLineDash([3, 3]);
+      for (const [i, j] of (g.bonds || [])) {
+        const [x1, y1] = Pc(cells[i]), [x2, y2] = Pc(cells[j]);
+        ctx.strokeStyle = 'rgba(42,35,24,0.35)'; ctx.lineWidth = view.s * 0.12;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+      cells.forEach((c, i) => {
+        const [x, y] = Pc(c);
+        ctx.beginPath(); ctx.arc(x, y, view.s * 0.62, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(42,35,24,0.5)'; ctx.lineWidth = 1.2; ctx.stroke();
+        if (cells.length > 1) {
+          ctx.globalAlpha = 0.45; ctx.fillStyle = '#2A2318';
+          ctx.font = `600 ${Math.round(view.s * 0.42)}px 'EB Garamond', serif`;
+          ctx.fillText(elems[i], x, y);
+          ctx.globalAlpha = 1; ctx.font = `700 10px 'Courier Prime', monospace`;
+        }
+      });
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(42,35,24,0.55)';
+      const [lx, ly] = Pc(cells[0]);
+      ctx.fillText('IN·' + elems[0], lx, ly + view.s * 0.95);
+    }
+    const out = pz.output;
+    if (out) {
+      ctx.setLineDash([4, 4]);
+      for (const [i, j] of out.bonds) {
+        const [x1, y1] = Pc(out.cells[i]), [x2, y2] = Pc(out.cells[j]);
+        ctx.strokeStyle = '#33705E'; ctx.globalAlpha = 0.5; ctx.lineWidth = view.s * 0.14;
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      out.cells.forEach((c, i) => {
+        const [x, y] = Pc(c);
+        ctx.beginPath(); ctx.arc(x, y, view.s * 0.55, 0, Math.PI * 2);
+        ctx.strokeStyle = '#33705E'; ctx.lineWidth = 1.3; ctx.stroke();
+        ctx.globalAlpha = 0.55; ctx.fillStyle = '#33705E';
+        ctx.font = `600 ${Math.round(view.s * 0.42)}px 'EB Garamond', serif`;
+        ctx.fillText(out.elems[i], x, y);
+        ctx.globalAlpha = 1; ctx.font = `700 10px 'Courier Prime', monospace`;
+      });
+      ctx.setLineDash([]);
+      const [x, y] = Pc(out.cells[0]);
+      ctx.fillStyle = '#33705E'; ctx.fillText('OUT', x, y - view.s * 1.0);
+    }
+  }
+
+  function drawArmShape(base, hands, elbow, selected, ghost) {
+    const [bx, by] = base;
+    ctx.globalAlpha = ghost ? 0.45 : 1;
+    for (const h of hands) {
+      ctx.strokeStyle = selected ? '#A0762B' : '#8A6A1E'; ctx.lineWidth = view.s * 0.16; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(h.x, h.y); ctx.stroke();
+      for (const side of [-1, 1]) {
+        const ca = h.ang + side * (Math.PI / 2) * 0.5;
+        ctx.lineWidth = view.s * 0.11;
+        ctx.beginPath();
+        ctx.moveTo(h.x - Math.cos(h.ang) * view.s * 0.2, h.y - Math.sin(h.ang) * view.s * 0.2);
+        ctx.lineTo(h.x + Math.cos(ca) * view.s * 0.42, h.y + Math.sin(ca) * view.s * 0.42);
+        ctx.stroke();
+      }
+    }
+    if (elbow) {
+      ctx.beginPath(); ctx.arc(bx, by, view.s * 0.16, 0, Math.PI * 2);
+      ctx.fillStyle = '#C9B57E'; ctx.fill();
+      ctx.lineWidth = 1.4; ctx.strokeStyle = '#8A6A1E'; ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(bx, by, view.s * 0.35 * PITCH, 0, Math.PI * 2);
+      ctx.fillStyle = '#C9B57E'; ctx.fill();
+      ctx.lineWidth = selected ? 2.6 : 1.8;
+      ctx.strokeStyle = selected ? '#A0762B' : '#8A6A1E'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx, by, view.s * 0.1, 0, Math.PI * 2);
+      ctx.fillStyle = '#2A2318'; ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function handsFor(posePos, poseRot, arm) {
+    return GRIPOFF[arm.grippers].map(off => {
+      const d = ((poseRot + arm.angle + off) % 6 + 6) % 6;
+      const cell = [posePos[0] + GW.DIRS[d][0] * arm.len, posePos[1] + GW.DIRS[d][1] * arm.len];
+      const [hx, hy] = Pc(cell);
+      const [bx, by] = Pc(posePos);
+      return { x: hx, y: hy, ang: Math.atan2(hy - by, hx - bx) };
+    });
+  }
+
+  function drawEdit() {
+    drawBoard();
+    const poses = initPoses();
+    for (const arm of machine.arms) {
+      const p = poses[arm.id];
+      drawArmShape(Pc(p.pos), handsFor(p.pos, p.rot, arm), !!arm.mount.elbow, arm.id === selId, false);
+    }
+    // placement ghost
+    if (hoverCell && tool === 'arm') {
+      const ghost = { grippers: cfg.grippers, len: cfg.len, angle: 0 };
+      drawArmShape(Pc(hoverCell), handsFor(hoverCell, 0, ghost), false, false, true);
+    }
+    if (hoverCell && tool === 'elbow') {
+      const hit = shaftAt(hoverCell);
+      if (hit) {
+        const ghost = { grippers: cfg.grippers, len: cfg.len, angle: 0 };
+        drawArmShape(Pc(hoverCell), handsFor(hoverCell, hit.rot, ghost), true, false, true);
+      }
+    }
+  }
+
+  function drawRun(f) {
+    drawBoard();
+    const rs = sim.renderState(f);
+    const atomPx = {};
+    for (const a of rs.atoms) atomPx[a.id] = P(a.x, a.y);
+    ctx.strokeStyle = '#2A2318'; ctx.lineWidth = view.s * 0.2;
+    for (const [i, j] of rs.bonds) {
+      if (!atomPx[i] || !atomPx[j]) continue;
+      ctx.beginPath(); ctx.moveTo(...atomPx[i]); ctx.lineTo(...atomPx[j]); ctx.stroke();
+    }
+    for (const arm of rs.arms) {
+      drawArmShape(P(arm.base[0], arm.base[1]),
+        arm.hands.map(h => { const [x, y] = P(h.x, h.y); return { x, y, ang: h.ang }; }),
+        arm.elbow, false, false);
+    }
+    for (const a of rs.atoms) {
+      const [x, y] = atomPx[a.id];
+      const E = ELEMS[a.elem] || { fill: '#999', label: '#000' };
+      ctx.beginPath(); ctx.arc(x, y, view.s * 0.35 * PITCH, 0, Math.PI * 2);
+      ctx.fillStyle = E.fill; ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = '#2A2318'; ctx.stroke();
+      ctx.fillStyle = E.label;
+      ctx.font = `600 ${Math.round(view.s * 0.5)}px 'EB Garamond', serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(a.elem, x, y + 0.5);
+    }
+  }
+
+  // ---------- hit testing ----------
+  function baseAt(cell) {
+    const poses = initPoses();
+    for (const arm of machine.arms) if (eq(poses[arm.id].pos, cell)) return arm;
+    return null;
+  }
+  function shaftAt(cell) {
+    // a shaft position of some arm: returns {arm, at, rot} for elbow attachment
+    const poses = initPoses();
+    for (const arm of machine.arms) {
+      const p = poses[arm.id];
+      const d = ((p.rot + arm.angle) % 6 + 6) % 6;
+      for (let i = 1; i <= arm.len; i++) {
+        const c = [p.pos[0] + GW.DIRS[d][0] * i, p.pos[1] + GW.DIRS[d][1] * i];
+        if (eq(c, cell)) return { arm, at: i, rot: d };
+      }
+    }
+    return null;
+  }
+
+  // ---------- edit ops ----------
+  let nextId = 0;
+  const freshId = () => { while (armById('a' + nextId)) nextId++; return 'a' + nextId; };
+  function touched() { saveDraft(); refreshAll(); }
+
+  function placeArm(cell) {
+    if (baseAt(cell)) { setStatus('a base already sits there', 'bad'); return; }
+    machine.arms.push({ id: freshId(), grippers: cfg.grippers, len: cfg.len,
+      mount: { ground: [cell[0], cell[1]] }, angle: 0, tape: { delay: 0, ops: ['W'] } });
+    selId = machine.arms[machine.arms.length - 1].id;
+    cursor = { armId: selId, pos: 0 };
+    touched();
+  }
+  function placeElbow(cell) {
+    const hit = shaftAt(cell);
+    if (!hit) { setStatus('elbows attach to a point along an existing arm — click a shaft cell', 'bad'); return; }
+    machine.arms.push({ id: freshId(), grippers: cfg.grippers, len: cfg.len,
+      mount: { elbow: { parent: hit.arm.id, at: hit.at } }, angle: 0, tape: { delay: 0, ops: ['W'] } });
+    selId = machine.arms[machine.arms.length - 1].id;
+    cursor = { armId: selId, pos: 0 };
+    touched();
+  }
+  function deleteArm(id) {
+    const doomed = new Set([id]);
+    let grew = true;                    // children of a deleted arm go with it
+    while (grew) {
+      grew = false;
+      for (const a of machine.arms) {
+        if (a.mount.elbow && doomed.has(a.mount.elbow.parent) && !doomed.has(a.id)) { doomed.add(a.id); grew = true; }
+      }
+    }
+    machine.arms = machine.arms.filter(a => !doomed.has(a.id));
+    if (doomed.has(selId)) selId = null;
+    if (cursor && doomed.has(cursor.armId)) cursor = null;
+    touched();
+  }
+  function rotateArm(id, dk) {
+    const a = armById(id); if (!a) return;
+    a.angle = ((a.angle + dk) % 6 + 6) % 6;
+    touched();
+  }
+
+  // ---------- tape editing ----------
+  function tapeOf(id) { return armById(id).tape; }
+  function setOp(op) {
+    if (!cursor) { setStatus('select a tape cell first', 'bad'); return; }
+    const t = tapeOf(cursor.armId);
+    if (cursor.pos >= t.ops.length) t.ops.push(op);
+    else t.ops[cursor.pos] = op;
+    cursor.pos = Math.min(cursor.pos + 1, t.ops.length);
+    touched();
+  }
+  function insOp() {
+    if (!cursor) return;
+    const t = tapeOf(cursor.armId);
+    t.ops.splice(Math.min(cursor.pos, t.ops.length), 0, 'W');
+    touched();
+  }
+  function delOp() {
+    if (!cursor) return;
+    const t = tapeOf(cursor.armId);
+    if (t.ops.length <= 1) return;
+    t.ops.splice(Math.min(cursor.pos, t.ops.length - 1), 1);
+    cursor.pos = Math.min(cursor.pos, t.ops.length - 1);
+    touched();
+  }
+  function bumpDelay(d) {
+    if (!cursor) { setStatus('select a tape cell first', 'bad'); return; }
+    const t = tapeOf(cursor.armId);
+    t.delay = Math.max(0, (t.delay || 0) + d);
+    touched();
+  }
+
+  // ---------- tapes panel ----------
+  function buildTapes() {
+    const host = $('tapes');
+    host.innerHTML = '';
+    if (mode === 'edit') {
+      const pal = document.createElement('div'); pal.className = 'oppal';
+      pal.innerHTML = `<span class="seg-label">SET OP</span>`;
+      for (const op of ['G', 'D', '+', '-', 'P', 'Q', 'W']) {
+        const b = document.createElement('button'); b.textContent = GLYPH[op];
+        b.title = { G: 'grab', D: 'release', '+': 'turn cw', '-': 'turn ccw', P: 'pivot cw', Q: 'pivot ccw', W: 'wait' }[op];
+        b.addEventListener('click', () => setOp(op));
+        pal.appendChild(b);
+      }
+      const mk = (txt, title, fn) => { const b = document.createElement('button'); b.textContent = txt; b.title = title; b.addEventListener('click', fn); pal.appendChild(b); };
+      mk('+cell', 'insert a cell at the cursor', insOp);
+      mk('−cell', 'remove the cell at the cursor', delOp);
+      mk('»+', 'add a first-pass delay block', () => bumpDelay(1));
+      mk('»−', 'remove a delay block', () => bumpDelay(-1));
+      host.appendChild(pal);
+    }
+    const arms = mode === 'run' ? sim.state.arms : machine.arms;
+    for (const arm of arms) {
+      const row = document.createElement('div'); row.className = 'tape-row' + (arm.id === selId && mode === 'edit' ? ' sel' : '');
+      const lab = document.createElement('span'); lab.className = 'tape-label'; lab.textContent = 'ARM ' + arm.id;
+      lab.addEventListener('click', () => { if (mode === 'edit') { selId = arm.id; refreshAll(); } });
+      const cells = document.createElement('div'); cells.className = 'tape-cells';
+      for (let i = 0; i < arm.tape.delay; i++) {
+        const sp = document.createElement('span'); sp.className = 'delay'; sp.textContent = '»'; cells.appendChild(sp);
+      }
+      arm.tape.ops.forEach((op, i) => {
+        const sp = document.createElement('span'); sp.textContent = GLYPH[op];
+        if (mode === 'edit') {
+          if (cursor && cursor.armId === arm.id && cursor.pos === i) sp.classList.add('cursor');
+          sp.addEventListener('click', () => { selId = arm.id; cursor = { armId: arm.id, pos: i }; refreshAll(); });
+        }
+        cells.appendChild(sp);
+      });
+      if (mode === 'edit') {
+        const add = document.createElement('span'); add.textContent = '+'; add.style.opacity = '.5';
+        add.addEventListener('click', () => { selId = arm.id; cursor = { armId: arm.id, pos: arm.tape.ops.length }; insOp(); });
+        cells.appendChild(add);
+      }
+      row.appendChild(lab); row.appendChild(cells); host.appendChild(row);
+    }
+    if (!arms.length) host.innerHTML += `<div class="tape-row"><span class="tape-label" style="width:auto">no arms yet — pick the ARM tool and click the board</span></div>`;
+  }
+  function updateRunTapes() {
+    const t = sim.state.tick;
+    const rows = $('tapes').querySelectorAll('.tape-row');
+    sim.state.arms.forEach((arm, ai) => {
+      const row = rows[ai]; if (!row) return;
+      const cells = row.querySelector('.tape-cells').children;
+      for (let i = 0; i < cells.length; i++) cells[i].classList.remove('on');
+      if (t === 0) return;
+      for (let i = 0; i < arm.tape.delay; i++) cells[i].classList.toggle('spent', t > i);
+      const idx = t <= arm.tape.delay ? t - 1 : arm.tape.delay + (t - arm.tape.delay - 1) % arm.tape.ops.length;
+      if (!sim.state.fault && sim.state.cycles === null && cells[idx]) cells[idx].classList.add('on');
+    });
+  }
+
+  // ---------- HUD / status / stamp ----------
+  function setStatus(msg, cls) { $('status').innerHTML = cls ? `<span class="${cls}">${msg}</span>` : msg; }
+  function hud() {
+    if (mode === 'run' && sim) {
+      const st = sim.state, m = sim.metrics();
+      $('hTick').textContent = st.tick;
+      $('hCost').textContent = m.cost + 'g';
+      $('hArea').textContent = m.area;
+      $('hSum').textContent = m.sum !== null ? m.sum : (m.cost + st.tick + m.area) + '…';
+      $('hProd').textContent = st.products + '/' + st.caps.goal;
+    } else {
+      $('hTick').textContent = '0';
+      $('hCost').textContent = costOf() + 'g';
+      $('hArea').textContent = '—';
+      $('hSum').textContent = '—';
+      $('hProd').textContent = '0/' + ((puzzle().caps && puzzle().caps.goal) || GW.DEFAULT_CAPS.goal);
+    }
+  }
+  function stamp() {
+    const el = $('stamp'), inner = $('stampInner');
+    if (mode !== 'run' || !sim) { el.classList.remove('show'); return; }
+    const st = sim.state;
+    if (st.fault) {
+      inner.className = 'stamp-inner bad';
+      inner.innerHTML = `Rejected · ${st.fault.kind}<small>tick ${st.fault.tick}${st.fault.detail ? ' · ' + st.fault.detail : ''}</small>`;
+      el.classList.add('show'); done = true;
+    } else if (st.cycles !== null) {
+      const m = sim.metrics();
+      inner.className = 'stamp-inner';
+      inner.innerHTML = `Verified · ${st.products} of ${st.caps.goal}<small>${m.cost}g + ${m.cycles}c + ${m.area}a = SUM ${m.sum}</small>`;
+      el.classList.add('show'); done = true;
+    } else { el.classList.remove('show'); done = false; }
+  }
+
+  // ---------- persistence / sharing ----------
+  function code() { return key() + '.' + CODEC.encodeString(machine); }
+  function saveDraft() {
+    try { localStorage.setItem('gw-draft-' + key(), CODEC.encodeString(machine)); } catch (e) {}
+  }
+  function loadDraft() {
+    try {
+      const s = localStorage.getItem('gw-draft-' + key());
+      if (s) return CODEC.decodeString(s);
+    } catch (e) {}
+    return null;
+  }
+  function importCode(str) {
+    const dot = str.indexOf('.');
+    if (dot < 0) { setStatus('codes look like <puzzle>.<data>', 'bad'); return false; }
+    const k = str.slice(0, dot), data = str.slice(dot + 1).trim();
+    const idx = EXAMPLES.findIndex(e => e.key === k);
+    if (idx < 0) { setStatus('unknown puzzle “' + k + '”', 'bad'); return false; }
+    let m;
+    try { m = CODEC.decodeString(data); } catch (e) { setStatus(String(e.message || e), 'bad'); return false; }
+    pIdx = idx;
+    machine = m; selId = null; cursor = null;
+    enterEdit();
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('on', i === pIdx));
+    fitView(); touched();
+    setStatus('imported ' + machine.arms.length + ' arm(s) into ' + EXAMPLES[idx].name, 'good');
+    return true;
+  }
+
+  // ---------- mode switching ----------
+  function enterEdit() {
+    mode = 'edit'; sim = null; running = false; done = false;
+    $('btnMode').textContent = '▶ Test';
+    $('btnPlay').disabled = true; $('btnStep').disabled = true;
+    $('editTools').style.display = '';
+    stamp();
+  }
+  function enterRun() {
+    const bad = validate();
+    if (bad) { setStatus('cannot test: ' + bad, 'bad'); return; }
+    mode = 'run';
+    sim = GW.createSim(puzzle(), clone(machine));
+    running = true; done = false; phase = 1;
+    $('btnMode').textContent = '✎ Edit';
+    $('btnPlay').disabled = false; $('btnPlay').textContent = 'Pause';
+    $('btnStep').disabled = false;
+    $('editTools').style.display = 'none';
+    buildTapes(); updateRunTapes(); hud(); stamp();
+    setStatus('testing — the verifier is watching every sweep');
+  }
+
+  function refreshAll() {
+    buildTapes(); hud();
+    if (mode === 'edit') {
+      const bad = validate();
+      setStatus(bad ? `<span class="bad">✗ ${bad}</span>` : `<span class="good">✓ layout legal</span> · ${machine.arms.length} arm(s) · code ${code().length} chars`);
+    }
+  }
+
+  // ---------- canvas input ----------
+  const mousePos = (ev) => {
+    const r = canvas.getBoundingClientRect();
+    return [(ev.clientX - r.left) * (CW / r.width), (ev.clientY - r.top) * (CH / r.height)];
+  };
+  canvas.addEventListener('mousedown', (ev) => {
+    if (mode !== 'edit') return;
+    const [mx, my] = mousePos(ev);
+    const cell = cellAt(mx, my);
+    if (tool === 'select') {
+      const arm = baseAt(cell);
+      if (arm) { selId = arm.id; cursor = { armId: arm.id, pos: 0 }; drag = { armId: arm.id, moved: false }; refreshAll(); }
+      else { selId = null; drag = { pan: true, x: mx, y: my }; refreshAll(); }
+    }
+  });
+  canvas.addEventListener('mousemove', (ev) => {
+    const [mx, my] = mousePos(ev);
+    hoverCell = cellAt(mx, my);
+    if (drag && drag.pan) {
+      view.ox += mx - drag.x; view.oy += my - drag.y;
+      drag.x = mx; drag.y = my;
+    } else if (drag && drag.armId) {
+      const arm = armById(drag.armId);
+      if (arm && arm.mount.ground && !eq(arm.mount.ground, hoverCell) && !baseAt(hoverCell)) {
+        arm.mount.ground = [hoverCell[0], hoverCell[1]];
+        drag.moved = true;
+      }
+    }
+  });
+  window.addEventListener('mouseup', () => {
+    if (drag && drag.armId && drag.moved) touched();
+    drag = null;
+  });
+  canvas.addEventListener('click', (ev) => {
+    if (mode !== 'edit') return;
+    const [mx, my] = mousePos(ev);
+    const cell = cellAt(mx, my);
+    if (tool === 'arm') placeArm(cell);
+    else if (tool === 'elbow') placeElbow(cell);
+  });
+  canvas.addEventListener('wheel', (ev) => {
+    ev.preventDefault();
+    const [mx, my] = mousePos(ev);
+    const k = ev.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const s2 = Math.max(10, Math.min(64, view.s * k));
+    view.ox = mx - (mx - view.ox) * (s2 / view.s);
+    view.oy = my - (my - view.oy) * (s2 / view.s);
+    view.s = s2;
+  }, { passive: false });
+
+  window.addEventListener('keydown', (ev) => {
+    if (mode !== 'edit') return;
+    if (ev.target.tagName === 'INPUT') return;
+    if (ev.key === '[') rotateArm(selId, -1);
+    else if (ev.key === ']') rotateArm(selId, 1);
+    else if (ev.key === 'Delete' || ev.key === 'Backspace') { if (selId) { deleteArm(selId); ev.preventDefault(); } }
+    else if (ev.key === 'Escape') { selId = null; tool = 'select'; syncToolSeg(); refreshAll(); }
+  });
+
+  // ---------- toolbar ----------
+  function syncToolSeg() {
+    document.querySelectorAll('#toolSeg button').forEach(b => b.classList.toggle('on', b.dataset.tool === tool));
+    canvas.classList.toggle('tool-select', tool === 'select');
+    $('toolHint').textContent = tool === 'arm' ? 'click an empty cell to plant a base'
+      : tool === 'elbow' ? 'click a shaft cell of an existing arm'
+      : 'click a base to select · drag to move · [ ] rotate · empty space pans';
+  }
+  document.querySelectorAll('#toolSeg button').forEach(b => b.addEventListener('click', () => { tool = b.dataset.tool; syncToolSeg(); }));
+  document.querySelectorAll('#gripSeg button').forEach(b => b.addEventListener('click', () => {
+    cfg.grippers = +b.dataset.g;
+    document.querySelectorAll('#gripSeg button').forEach(x => x.classList.toggle('on', x === b));
+    if (selId && armById(selId)) { armById(selId).grippers = cfg.grippers; touched(); }
+  }));
+  document.querySelectorAll('#lenSeg button').forEach(b => b.addEventListener('click', () => {
+    cfg.len = +b.dataset.l;
+    document.querySelectorAll('#lenSeg button').forEach(x => x.classList.toggle('on', x === b));
+    if (selId && armById(selId)) { armById(selId).len = cfg.len; touched(); }
+  }));
+  $('btnRotL').addEventListener('click', () => rotateArm(selId, -1));
+  $('btnRotR').addEventListener('click', () => rotateArm(selId, 1));
+  $('btnDelete').addEventListener('click', () => { if (selId) deleteArm(selId); });
+  $('btnRef').addEventListener('click', () => {
+    machine = clone(EXAMPLES[pIdx].machine);
+    machine.arms.forEach(a => { a.tape = a.tape || {}; a.tape.delay = a.tape.delay || 0; });
+    selId = null; cursor = null; fitView(); touched();
+    setStatus('reference solution loaded', 'good');
+  });
+  $('btnClear').addEventListener('click', () => { machine = { arms: [] }; selId = null; cursor = null; touched(); });
+
+  // ---------- run controls ----------
+  $('btnMode').addEventListener('click', () => { mode === 'edit' ? enterRun() : (enterEdit(), refreshAll()); });
+  $('btnPlay').addEventListener('click', () => {
+    if (done) { enterRun(); return; }
+    running = !running; $('btnPlay').textContent = running ? 'Pause' : 'Play';
+  });
+  $('btnStep').addEventListener('click', () => {
+    running = false; $('btnPlay').textContent = 'Play';
+    if (done || !sim) return;
+    sim.step(); phase = 0;
+    updateRunTapes(); hud(); stamp();
+  });
+  document.querySelectorAll('.speed .ctl').forEach(b => b.addEventListener('click', () => {
+    stepMs = +b.dataset.ms;
+    document.querySelectorAll('.speed .ctl').forEach(x => x.classList.toggle('on', x === b));
+  }));
+
+  // ---------- share ----------
+  $('btnCopy').addEventListener('click', () => {
+    const c = code();
+    $('shareIn').value = c;
+    try { navigator.clipboard.writeText(c); setStatus('code copied — ' + c.length + ' chars of calldata', 'good'); }
+    catch (e) { setStatus('code in the box below — copy it manually', 'good'); }
+    try { history.replaceState(null, '', '#' + c); } catch (e) {}
+  });
+  $('btnImport').addEventListener('click', () => importCode($('shareIn').value.trim()));
+
+  // ---------- puzzles ----------
+  function selectPuzzle(i, keepMachine) {
+    pIdx = i;
+    document.querySelectorAll('.tab').forEach((t, k) => t.classList.toggle('on', k === i));
+    if (!keepMachine) {
+      machine = loadDraft() || clone(EXAMPLES[i].machine);
+      machine.arms.forEach(a => { a.tape = a.tape || {}; a.tape.delay = a.tape.delay || 0; });
+    }
+    selId = null; cursor = null;
+    enterEdit(); fitView(); refreshAll(); hud();
+    try { history.replaceState(null, '', '#' + key()); } catch (e) {}
+  }
+  const tabs = $('tabs');
+  EXAMPLES.forEach((ex, i) => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (i === 0 ? ' on' : '');
+    b.textContent = ex.name;
+    b.addEventListener('click', () => selectPuzzle(i));
+    tabs.appendChild(b);
+  });
+
+  // ---------- boot ----------
+  const hash = decodeURIComponent(location.hash.slice(1));
+  let booted = false;
+  if (hash) {
+    if (hash.includes('.')) booted = importCode(hash);
+    else {
+      const i = EXAMPLES.findIndex(e => e.key === hash);
+      if (i >= 0) { selectPuzzle(i); booted = true; }
+    }
+  }
+  if (!booted) selectPuzzle(0);
+  syncToolSeg();
+
+  // ---------- frame loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(120, now - last); last = now;
+    if (mode === 'run' && sim) {
+      if (running && !done) {
+        if (stepMs === 0) {
+          for (let i = 0; i < 40 && !done; i++) { sim.step(); if (sim.state.fault || sim.state.cycles !== null) break; }
+          phase = 1;
+          updateRunTapes(); hud(); stamp();
+        } else {
+          phase += dt / stepMs;
+          if (phase >= 1) {
+            sim.step(); phase = 0;
+            updateRunTapes(); hud(); stamp();
+          }
+        }
+      }
+      drawRun(Math.min(phase, 1));
+    } else {
+      drawEdit();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
